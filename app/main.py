@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Iterable
 
 import httpx
@@ -18,6 +18,7 @@ from app.commands import (
     ListCommand,
     RegisterGroupCommand,
     ScheduleCommand,
+    ScheduleConfigCommand,
     UnregisterGroupCommand,
     parse_owner_command,
 )
@@ -26,10 +27,14 @@ from app.db import create_all, get_session, session_scope
 from app.logic import find_correlation_for_context
 from app.scheduler import (
     cancel_job,
+    clear_pending_schedule,
+    get_group_by_alias,
+    get_pending_schedule,
     list_groups,
     list_jobs,
     mark_job_sent,
     register_group,
+    save_pending_schedule,
     schedule_job,
     unregister_group,
 )
@@ -160,12 +165,15 @@ def _owner_command_help() -> str:
         "- register group <alias> <group_id> [optional name]\n"
         "- unregister group <alias>\n"
         "- groups\n"
-        '- schedule "<text>" to <alias> at <natural datetime>\n'
+        '- schedule "<text>" to <alias> [at] <natural datetime>\n'
+        '- schedule to <alias> [at] <natural datetime> (send content next)\n'
         "- list\n"
         "- cancel <job_id>\n"
         "Examples:\n"
         'schedule "Standup at 09:00" to team at today 08:55\n'
-        'schedule "Demo tomorrow" to sales at Sun 9am'
+        'schedule "Demo tomorrow" to sales Sun 9am\n'
+        'schedule to team at tomorrow 09:00\n'
+        'schedule to team in 1 minute'
     )
 
 
@@ -215,6 +223,7 @@ def process_owner_message(message: IncomingMessage) -> None:
             logger.warning("owner.unauthorized_sender", sender=message.sender_wa_id)
             return
 
+        pending_schedule = get_pending_schedule(session, settings.owner_wa_id)
         with whatsapp_client() as client:
             if message.button_payload:
                 client.send_text_message(
@@ -224,25 +233,109 @@ def process_owner_message(message: IncomingMessage) -> None:
                 return
 
             if not message.text:
-                client.send_text_message(
-                    to=settings.owner_wa_id,
-                    text="Unsupported message type. Send text commands.",
-                )
+                if pending_schedule:
+                    client.send_text_message(
+                        to=settings.owner_wa_id,
+                        text=(
+                            "Pending schedule is waiting for content, but the message type "
+                            "is unsupported. Please forward or send text content."
+                        ),
+                    )
+                else:
+                    client.send_text_message(
+                        to=settings.owner_wa_id,
+                        text="Unsupported message type. Send text commands.",
+                    )
                 return
 
             try:
                 command = parse_owner_command(message.text)
             except CommandParseError:
-                client.send_text_message(
-                    to=settings.owner_wa_id,
-                    text="Could not parse command.\n" + _owner_command_help(),
-                )
+                if pending_schedule:
+                    _complete_pending_schedule(
+                        session,
+                        client,
+                        settings,
+                        pending_schedule,
+                        message.text,
+                    )
+                else:
+                    client.send_text_message(
+                        to=settings.owner_wa_id,
+                        text="Could not parse command.\n" + _owner_command_help(),
+                    )
                 return
             handle_owner_command(command, session, client, settings)
 
 
+def _complete_pending_schedule(
+    session: Session,
+    client: WhatsAppClient,
+    settings: Settings,
+    pending_schedule,
+    content_text: str,
+) -> None:
+    if not content_text.strip():
+        client.send_text_message(
+            to=settings.owner_wa_id,
+            text="Cannot schedule an empty message. Please send the content text.",
+        )
+        return
+
+    # If the configured run_at has just passed by the time content arrives,
+    # schedule it for asap with a small grace buffer instead of failing.
+    now = utc_now()
+    run_at = pending_schedule.run_at
+    # Normalize possible naive datetimes coming from SQLite
+    if run_at.tzinfo is None:
+        run_at = run_at.replace(tzinfo=timezone.utc)
+    created_at = getattr(pending_schedule, "created_at", None)
+    if created_at is not None and created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    adjusted = False
+    if run_at <= now:
+        # Consider recent configs as eligible for auto-adjust (e.g., "in 1 minute").
+        try:
+            basis = created_at if created_at is not None else now
+            if (now - basis) <= timedelta(minutes=5):
+                run_at = now + timedelta(seconds=10)
+                adjusted = True
+        except Exception:
+            # Fallback to original behavior if something unexpected occurs.
+            pass
+
+    try:
+        job = schedule_job(
+            session,
+            group_alias=pending_schedule.group_alias,
+            text=content_text,
+            run_at=run_at,
+            created_by=settings.owner_wa_id,
+        )
+    except ValueError as exc:
+        clear_pending_schedule(session, settings.owner_wa_id)
+        client.send_text_message(to=settings.owner_wa_id, text=str(exc))
+        return
+
+    clear_pending_schedule(session, settings.owner_wa_id)
+    run_at_local = run_at.astimezone(default_tz())
+    if adjusted:
+        text = (
+            f"Original time had just passed; scheduled job #{job.id} to "
+            f"'{pending_schedule.group_alias}' at {run_at_local.strftime('%Y-%m-%d %H:%M %Z')} "
+            f"using forwarded content."
+        )
+    else:
+        text = (
+            f"Scheduled job #{job.id} to '{pending_schedule.group_alias}' at "
+            f"{run_at_local.strftime('%Y-%m-%d %H:%M %Z')} using forwarded content."
+        )
+    client.send_text_message(to=settings.owner_wa_id, text=text)
+
+
 def handle_owner_command(
     command: ScheduleCommand
+    | ScheduleConfigCommand
     | ListCommand
     | CancelCommand
     | GroupsCommand
@@ -276,10 +369,62 @@ def handle_owner_command(
             client.send_text_message(to=settings.owner_wa_id, text=str(exc))
             return
 
+        clear_pending_schedule(session, settings.owner_wa_id)
         client.send_text_message(
             to=settings.owner_wa_id,
             text=(
                 f"Scheduled job #{job.id} to '{command.group_alias}' at "
+                f"{run_at_local.strftime('%Y-%m-%d %H:%M %Z')}."
+            ),
+        )
+
+    elif isinstance(command, ScheduleConfigCommand):
+        run_at_utc = parse_natural_datetime(command.when, tz=default_tz())
+        if not run_at_utc:
+            client.send_text_message(
+                to=settings.owner_wa_id,
+                text=(
+                    "Could not parse the schedule time. Please try again.\n"
+                    + _owner_command_help()
+                ),
+            )
+            return
+
+        # Accept near-immediate times like "now" by adjusting forward slightly.
+        now = utc_now()
+        if run_at_utc <= now:
+            if (now - run_at_utc) <= timedelta(minutes=5):
+                run_at_utc = now + timedelta(seconds=10)
+            else:
+                client.send_text_message(
+                    to=settings.owner_wa_id,
+                    text="Scheduled time is in the past. Please choose a future time.",
+                )
+                return
+
+        group = get_group_by_alias(session, command.group_alias)
+        if not group:
+            client.send_text_message(
+                to=settings.owner_wa_id,
+                text=(
+                    f"Unknown group alias '{command.group_alias}'. Use register group first."
+                ),
+            )
+            return
+
+        save_pending_schedule(
+            session,
+            owner_id=settings.owner_wa_id,
+            group_alias=group.alias,
+            run_at=run_at_utc,
+        )
+
+        run_at_local = run_at_utc.astimezone(default_tz())
+        client.send_text_message(
+            to=settings.owner_wa_id,
+            text=(
+                "Configuration stored. Forward or send the message content to "
+                f"schedule it to '{group.alias}' at "
                 f"{run_at_local.strftime('%Y-%m-%d %H:%M %Z')}."
             ),
         )

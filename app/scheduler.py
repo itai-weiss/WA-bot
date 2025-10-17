@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Sequence
 
 from celery import Celery
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Group, Job, JobStatus
+from app.models import Group, Job, JobStatus, PendingSchedule, utcnow
 from utils.time import default_tz, to_utc
 
 
@@ -42,8 +42,13 @@ def schedule_job(
 
     run_at_utc = to_utc(run_at)
     current_utc = to_utc(datetime.now(default_tz()))
+    # Allow near-immediate or just-past times (e.g., "now"),
+    # but guard against clearly past schedules.
     if run_at_utc <= current_utc:
-        raise ValueError("Scheduled time is in the past.")
+        if (current_utc - run_at_utc) <= timedelta(minutes=5):
+            run_at_utc = current_utc + timedelta(seconds=10)
+        else:
+            raise ValueError("Scheduled time is in the past.")
 
     correlation_key = correlation_key or _generate_correlation_key(
         group.group_id, text, run_at_utc
@@ -77,6 +82,12 @@ def schedule_job(
     return job
 
 
+def get_group_by_alias(session: Session, alias: str) -> Group | None:
+    alias_normalized = alias.lower()
+    stmt = select(Group).where(Group.alias == alias_normalized)
+    return session.execute(stmt).scalar_one_or_none()
+
+
 def cancel_job(session: Session, job_id: int) -> bool:
     job = session.get(Job, job_id)
     if not job:
@@ -99,6 +110,45 @@ def list_jobs(session: Session) -> Sequence[Job]:
         .order_by(Job.run_at.asc())
     )
     return session.execute(stmt).scalars().all()
+
+
+def get_pending_schedule(session: Session, owner_id: str) -> PendingSchedule | None:
+    stmt = select(PendingSchedule).where(PendingSchedule.owner_id == owner_id)
+    return session.execute(stmt).scalar_one_or_none()
+
+
+def save_pending_schedule(
+    session: Session,
+    *,
+    owner_id: str,
+    group_alias: str,
+    run_at: datetime,
+) -> PendingSchedule:
+    alias_normalized = group_alias.lower()
+    run_at_utc = to_utc(run_at)
+    pending = get_pending_schedule(session, owner_id)
+    if pending:
+        pending.group_alias = alias_normalized
+        pending.run_at = run_at_utc
+        pending.created_at = utcnow()
+        return pending
+
+    pending = PendingSchedule(
+        owner_id=owner_id,
+        group_alias=alias_normalized,
+        run_at=run_at_utc,
+    )
+    session.add(pending)
+    session.flush()
+    return pending
+
+
+def clear_pending_schedule(session: Session, owner_id: str) -> bool:
+    pending = get_pending_schedule(session, owner_id)
+    if not pending:
+        return False
+    session.delete(pending)
+    return True
 
 
 def register_group(

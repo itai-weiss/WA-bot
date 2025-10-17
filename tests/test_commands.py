@@ -5,6 +5,7 @@ from app.commands import (
     ListCommand,
     RegisterGroupCommand,
     ScheduleCommand,
+    ScheduleConfigCommand,
     UnregisterGroupCommand,
     parse_owner_command,
 )
@@ -18,6 +19,13 @@ def test_parse_schedule_command():
     assert command.text == "Daily sync"
     assert command.group_alias == "team"
     assert "today" in command.when
+
+
+def test_parse_schedule_config_command():
+    command = parse_owner_command("schedule to team at tomorrow 08:55")
+    assert isinstance(command, ScheduleConfigCommand)
+    assert command.group_alias == "team"
+    assert "tomorrow" in command.when
 
 
 def test_parse_cancel_command():

@@ -3,7 +3,15 @@ from __future__ import annotations
 import enum
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -52,6 +60,18 @@ class Group(Base):
     alias: Mapped[str] = mapped_column(String(255), nullable=False)
     group_id: Mapped[str] = mapped_column(String(255), nullable=False)
     group_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utcnow
+    )
+
+
+class PendingSchedule(Base):
+    __tablename__ = "pending_schedules"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    owner_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    group_alias: Mapped[str] = mapped_column(String(255), nullable=False)
+    run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=utcnow
     )
