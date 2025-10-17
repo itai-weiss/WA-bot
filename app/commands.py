@@ -16,6 +16,12 @@ class ScheduleCommand:
 
 
 @dataclass
+class ScheduleConfigCommand:
+    group_alias: str
+    when: str
+
+
+@dataclass
 class ListCommand:
     pass
 
@@ -44,6 +50,7 @@ class GroupsCommand:
 
 OwnerCommand = (
     ScheduleCommand
+    | ScheduleConfigCommand
     | ListCommand
     | CancelCommand
     | RegisterGroupCommand
@@ -54,6 +61,10 @@ OwnerCommand = (
 
 SCHEDULE_RE = re.compile(
     r"""^schedule\s+"(?P<text>.+?)"\s+to\s+(?P<alias>[\w\-]+)\s+at\s+(?P<when>.+)$""",
+    re.IGNORECASE,
+)
+SCHEDULE_CONFIG_RE = re.compile(
+    r"""^schedule\s+to\s+(?P<alias>[\w\-]+)\s+at\s+(?P<when>.+)$""",
     re.IGNORECASE,
 )
 REGISTER_RE = re.compile(
@@ -75,6 +86,12 @@ def parse_owner_command(message: str) -> OwnerCommand:
     if match := SCHEDULE_RE.match(normalized):
         return ScheduleCommand(
             text=match.group("text"),
+            group_alias=match.group("alias"),
+            when=match.group("when"),
+        )
+
+    if match := SCHEDULE_CONFIG_RE.match(normalized):
+        return ScheduleConfigCommand(
             group_alias=match.group("alias"),
             when=match.group("when"),
         )
