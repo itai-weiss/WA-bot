@@ -60,11 +60,11 @@ OwnerCommand = (
 
 
 SCHEDULE_RE = re.compile(
-    r"""^schedule\s+"(?P<text>.+?)"\s+to\s+(?P<alias>[\w\-]+)\s+at\s+(?P<when>.+)$""",
+    r"""^schedule\s+"(?P<text>.+?)"\s+to\s+(?P<alias>[\w\-]+)\s+(?:at\s+)?(?P<when>.+)$""",
     re.IGNORECASE,
 )
 SCHEDULE_CONFIG_RE = re.compile(
-    r"""^schedule\s+to\s+(?P<alias>[\w\-]+)\s+at\s+(?P<when>.+)$""",
+    r"""^schedule\s+to\s+(?P<alias>[\w\-]+)\s+(?:at\s+)?(?P<when>.+)$""",
     re.IGNORECASE,
 )
 REGISTER_RE = re.compile(
