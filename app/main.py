@@ -390,6 +390,18 @@ def handle_owner_command(
             )
             return
 
+        # Accept near-immediate times like "now" by adjusting forward slightly.
+        now = utc_now()
+        if run_at_utc <= now:
+            if (now - run_at_utc) <= timedelta(minutes=5):
+                run_at_utc = now + timedelta(seconds=10)
+            else:
+                client.send_text_message(
+                    to=settings.owner_wa_id,
+                    text="Scheduled time is in the past. Please choose a future time.",
+                )
+                return
+
         group = get_group_by_alias(session, command.group_alias)
         if not group:
             client.send_text_message(
@@ -397,13 +409,6 @@ def handle_owner_command(
                 text=(
                     f"Unknown group alias '{command.group_alias}'. Use register group first."
                 ),
-            )
-            return
-
-        if run_at_utc <= utc_now():
-            client.send_text_message(
-                to=settings.owner_wa_id,
-                text="Scheduled time is in the past. Please choose a future time.",
             )
             return
 

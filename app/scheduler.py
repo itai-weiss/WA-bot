@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Sequence
 
 from celery import Celery
@@ -42,8 +42,13 @@ def schedule_job(
 
     run_at_utc = to_utc(run_at)
     current_utc = to_utc(datetime.now(default_tz()))
+    # Allow near-immediate or just-past times (e.g., "now"),
+    # but guard against clearly past schedules.
     if run_at_utc <= current_utc:
-        raise ValueError("Scheduled time is in the past.")
+        if (current_utc - run_at_utc) <= timedelta(minutes=5):
+            run_at_utc = current_utc + timedelta(seconds=10)
+        else:
+            raise ValueError("Scheduled time is in the past.")
 
     correlation_key = correlation_key or _generate_correlation_key(
         group.group_id, text, run_at_utc
