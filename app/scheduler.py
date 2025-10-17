@@ -1,0 +1,150 @@
+from __future__ import annotations
+
+import hashlib
+from datetime import datetime
+from typing import Sequence
+
+from celery import Celery
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.models import Group, Job, JobStatus
+from utils.time import default_tz, to_utc
+
+
+def _get_celery() -> Celery:
+    from app.workers import celery_app
+
+    return celery_app
+
+
+def _generate_correlation_key(group_id: str, text: str, run_at: datetime) -> str:
+    payload = f"{group_id}|{text}|{run_at.isoformat()}".encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def schedule_job(
+    session: Session,
+    *,
+    group_alias: str,
+    text: str,
+    run_at: datetime,
+    created_by: str,
+    correlation_key: str | None = None,
+) -> Job:
+    group_alias_normalized = group_alias.lower()
+
+    group = session.execute(
+        select(Group).where(Group.alias == group_alias_normalized)
+    ).scalar_one_or_none()
+    if not group:
+        raise ValueError(f"Unknown group alias '{group_alias}'. Use register group first.")
+
+    run_at_utc = to_utc(run_at)
+    current_utc = to_utc(datetime.now(default_tz()))
+    if run_at_utc <= current_utc:
+        raise ValueError("Scheduled time is in the past.")
+
+    correlation_key = correlation_key or _generate_correlation_key(
+        group.group_id, text, run_at_utc
+    )
+
+    existing_job = session.execute(
+        select(Job).where(Job.correlation_key == correlation_key)
+    ).scalar_one_or_none()
+    if existing_job:
+        return existing_job
+
+    job = Job(
+        group_id=group.group_id,
+        group_alias=group.alias,
+        text=text,
+        run_at=run_at_utc,
+        created_by=created_by,
+        correlation_key=correlation_key,
+    )
+    session.add(job)
+    session.flush()
+
+    task = _get_celery().send_task(
+        "app.workers.send_scheduled_message",
+        args=[job.id],
+        eta=run_at_utc,
+        kwargs={},
+    )
+    job.celery_task_id = task.id
+
+    return job
+
+
+def cancel_job(session: Session, job_id: int) -> bool:
+    job = session.get(Job, job_id)
+    if not job:
+        return False
+    if job.status in {JobStatus.CANCELLED, JobStatus.SENT}:
+        return True
+
+    job.status = JobStatus.CANCELLED
+    job.last_error = None
+
+    if job.celery_task_id:
+        _get_celery().control.revoke(job.celery_task_id, terminate=False)
+    return True
+
+
+def list_jobs(session: Session) -> Sequence[Job]:
+    stmt = (
+        select(Job)
+        .where(Job.status == JobStatus.SCHEDULED)
+        .order_by(Job.run_at.asc())
+    )
+    return session.execute(stmt).scalars().all()
+
+
+def register_group(
+    session: Session, alias: str, group_id: str, group_name: str | None = None
+) -> Group:
+    alias_normalized = alias.lower()
+
+    group = session.execute(
+        select(Group).where(Group.alias == alias_normalized)
+    ).scalar_one_or_none()
+    if group:
+        group.group_id = group_id
+        group.group_name = group_name
+        return group
+
+    group = Group(alias=alias_normalized, group_id=group_id, group_name=group_name)
+    session.add(group)
+    session.flush()
+    return group
+
+
+def unregister_group(session: Session, alias: str) -> bool:
+    alias_normalized = alias.lower()
+    group = session.execute(
+        select(Group).where(Group.alias == alias_normalized)
+    ).scalar_one_or_none()
+    if not group:
+        return False
+    session.delete(group)
+    return True
+
+
+def list_groups(session: Session) -> Sequence[Group]:
+    stmt = select(Group).order_by(Group.alias.asc())
+    return session.execute(stmt).scalars().all()
+
+
+def mark_job_sent(session: Session, job_id: int) -> None:
+    job = session.get(Job, job_id)
+    if job:
+        job.status = JobStatus.SENT
+        job.last_error = None
+
+
+def mark_job_failed(session: Session, job_id: int, error: str) -> None:
+    job = session.get(Job, job_id)
+    if job:
+        job.status = JobStatus.FAILED
+        job.last_error = error
