@@ -107,6 +107,8 @@ button { cursor: pointer; }
   line-height: 1.5;
 }
 .loading-note[hidden] { display: none; }
+.loading-note.failed { background: var(--red-soft); color: var(--red); }
+.loading-note.failed::before { content: none; }
 .loading-note::before {
   content: "";
   flex: none;

@@ -45,6 +45,9 @@ let allGroups = [];
 let groupsLoading = false; // /api/groups request in flight
 let waSyncing = false; // WhatsApp still syncing after connecting
 let syncPercent = null;
+let groupsRetries = 0;
+let groupsError = ''; // last failure after all retries; cleared on success
+const MAX_GROUP_RETRIES = 5;
 let selectedMg = new Set();
 let draftIds = new Set();
 let metagroups = [];
@@ -57,6 +60,7 @@ const TEXT = {
   status: {
     ready: 'מחובר',
     loadingGroups: 'טוען קבוצות…',
+    groupsFailed: 'הקבוצות לא נטענו',
     awaiting_scan: 'ממתין לסריקה',
     starting: 'מכין חיבור',
     loading: 'טוען את WhatsApp',
@@ -71,6 +75,7 @@ const TEXT = {
   searchGroups: (n) => `חפש מתוך ${n} קבוצות…`,
   noGroups: (n) => `לא נמצאו קבוצות. זוהו ${n} שיחות פרטיות בלבד.`,
   groupsFailed: (m) => `שגיאה בטעינת קבוצות: ${m}`,
+  groupsFailedNote: (m) => `רשימת הקבוצות לא נטענה (${m}). רעננו את הדף כדי לנסות שוב. אם זה חוזר, סגרו את חלון האפליקציה והפעילו אותה מחדש.`,
   noGroupMatch: 'אין תוצאות לחיפוש.',
   charCount: (n) => `${n} תווים`,
   noTimings: '— אין תזמונים קרובים —',
@@ -228,10 +233,14 @@ function renderLoadingState() {
   if (!lastReady) return; // disconnected meanwhile: poll() owns the header
   const busy = groupsLoading || waSyncing;
   const pct = waSyncing ? syncPercent : null;
-  setStatus(busy ? 'pending busy' : 'ready', busy ? TEXT.status.loadingGroups : TEXT.status.ready);
+  const failed = !busy && groupsError;
+  if (busy) setStatus('pending busy', TEXT.status.loadingGroups);
+  else if (failed) setStatus('error', TEXT.status.groupsFailed);
+  else setStatus('ready', TEXT.status.ready);
   for (const note of loadingNotes) {
-    note.textContent = busy ? TEXT.groupsStillLoading(pct) : '';
-    note.hidden = !busy;
+    note.textContent = busy ? TEXT.groupsStillLoading(pct) : failed ? TEXT.groupsFailedNote(groupsError) : '';
+    note.hidden = !busy && !failed;
+    note.classList.toggle('failed', Boolean(failed));
   }
 }
 
@@ -240,6 +249,7 @@ async function loadGroups() {
   if (!allGroups.length) groupPick.replaceChildren(emptyLine(TEXT.loadingGroups));
   groupsLoading = true;
   renderLoadingState();
+  let retrying = false;
 
   try {
     const res = await fetch('/api/groups');
@@ -252,12 +262,24 @@ async function loadGroups() {
       groupPick.replaceChildren(emptyLine(TEXT.noGroups(payload.totalChats || 0)));
       return;
     }
+    groupsRetries = 0;
+    groupsError = '';
     renderGroupPick();
     renderMetagroups();
   } catch (err) {
-    groupPick.replaceChildren(emptyLine(TEXT.groupsFailed(err.message)));
+    // Right after connecting this is usually WhatsApp reloading its page:
+    // keep showing "loading" and try again before reporting an error.
+    if (lastReady && groupsRetries < MAX_GROUP_RETRIES) {
+      groupsRetries++;
+      retrying = true;
+      setTimeout(loadGroups, 5000);
+    } else {
+      groupsRetries = 0;
+      groupsError = err.message;
+      groupPick.replaceChildren(emptyLine(TEXT.groupsFailed(err.message)));
+    }
   } finally {
-    groupsLoading = false;
+    groupsLoading = retrying;
     renderLoadingState();
   }
 }

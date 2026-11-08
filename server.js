@@ -101,6 +101,22 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 let boundPort = null;
 
+// WhatsApp Web sometimes reloads its page (right after linking, or while syncing).
+// Calls made meanwhile fail until whatsapp-web.js re-injects, so retry those briefly.
+const PAGE_RELOADING_RE = /Execution context was destroyed|Cannot find context|detached Frame|reading 'getChats'/i;
+
+async function getChats(attempts = 6) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await client.getChats();
+    } catch (err) {
+      if (attempt >= attempts || !state.ready || !PAGE_RELOADING_RE.test(err.message)) throw err;
+      console.warn(`[getChats] WhatsApp page reloading, retry ${attempt}/${attempts - 1}: ${err.message}`);
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+  }
+}
+
 function getClientUnavailableMessage() {
   return state.startupError?.message || 'WhatsApp עדיין לא מוכן';
 }
@@ -125,7 +141,7 @@ app.get('/api/groups', async (req, res) => {
   if (!state.ready) return res.status(503).json({ error: getClientUnavailableMessage() });
 
   try {
-    const chats = await client.getChats();
+    const chats = await getChats();
     const groups = chats
       .filter((chat) => chat.isGroup)
       .map((chat) => ({ id: chat.id._serialized, name: chat.name }))
@@ -146,7 +162,7 @@ app.get('/api/timings', async (req, res) => {
   const groupNames = {};
 
   try {
-    const chats = await client.getChats();
+    const chats = await getChats();
     for (const chat of chats) {
       if (chat.isGroup) groupNames[chat.id._serialized] = chat.name;
     }
