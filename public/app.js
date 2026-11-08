@@ -13,6 +13,7 @@ const qrImg = $('#qr-img');
 
 const timingPanel = $('#timing-panel');
 const groupPick = $('#group-pick');
+const loadingNotes = [$('#groups-loading'), $('#mg-loading')];
 const groupSearch = $('#group-search');
 const groupCountEl = $('#group-count');
 const metagroupName = $('#metagroup-name');
@@ -41,6 +42,9 @@ const doneList = $('#done-list');
 
 let lastReady = false;
 let allGroups = [];
+let groupsLoading = false; // /api/groups request in flight
+let waSyncing = false; // WhatsApp still syncing after connecting
+let syncPercent = null;
 let selectedMg = new Set();
 let draftIds = new Set();
 let metagroups = [];
@@ -52,6 +56,7 @@ const DONE_WINDOW_MS = 24 * 60 * 60 * 1000;
 const TEXT = {
   status: {
     ready: 'מחובר',
+    loadingGroups: 'טוען קבוצות…',
     awaiting_scan: 'ממתין לסריקה',
     starting: 'מכין חיבור',
     loading: 'טוען את WhatsApp',
@@ -61,6 +66,9 @@ const TEXT = {
   },
   serverOffline: 'לא ניתן ליצור קשר עם השרת המקומי. יש לוודא שהאפליקציה פתוחה.',
   loadingGroups: 'טוען רשימת קבוצות…',
+  groupsStillLoading: (pct) =>
+    `רשימת הקבוצות עדיין נטענת מ-WhatsApp${pct === null ? '' : ` (${pct}%)`}. ייתכן שחלק מהקבוצות עוד לא מופיעות. הרשימה תתעדכן לבד כשהטעינה תסתיים.`,
+  searchGroups: (n) => `חפש מתוך ${n} קבוצות…`,
   noGroups: (n) => `לא נמצאו קבוצות. זוהו ${n} שיחות פרטיות בלבד.`,
   groupsFailed: (m) => `שגיאה בטעינת קבוצות: ${m}`,
   noGroupMatch: 'אין תוצאות לחיפוש.',
@@ -172,16 +180,21 @@ async function poll() {
     updateAwakeNote(data);
 
     if (data.ready) {
-      setStatus('ready', TEXT.status.ready);
       qrPanel.hidden = true;
       timingPanel.hidden = false;
+      const wasSyncing = waSyncing;
+      waSyncing = Boolean(data.syncing);
+      syncPercent = data.syncPercent ?? null;
       if (!lastReady) {
         lastReady = true;
         setDefaultScheduleTime();
         loadGroups();
         loadMetagroups();
         loadTimings();
+      } else if (wasSyncing && !waSyncing) {
+        loadGroups(); // sync finished: fetch the complete list
       }
+      renderLoadingState();
       return;
     }
 
@@ -209,8 +222,24 @@ function emptyLine(text) {
   return p;
 }
 
+// Amber "loading" header and notes until both the groups request and WhatsApp's
+// own post-connect sync are done, so a partial list never looks final.
+function renderLoadingState() {
+  if (!lastReady) return; // disconnected meanwhile: poll() owns the header
+  const busy = groupsLoading || waSyncing;
+  const pct = waSyncing ? syncPercent : null;
+  setStatus(busy ? 'pending busy' : 'ready', busy ? TEXT.status.loadingGroups : TEXT.status.ready);
+  for (const note of loadingNotes) {
+    note.textContent = busy ? TEXT.groupsStillLoading(pct) : '';
+    note.hidden = !busy;
+  }
+}
+
 async function loadGroups() {
-  groupPick.replaceChildren(emptyLine(TEXT.loadingGroups));
+  // Keep showing the current list during a refresh; only an empty list gets the placeholder.
+  if (!allGroups.length) groupPick.replaceChildren(emptyLine(TEXT.loadingGroups));
+  groupsLoading = true;
+  renderLoadingState();
 
   try {
     const res = await fetch('/api/groups');
@@ -218,6 +247,7 @@ async function loadGroups() {
     if (!res.ok) throw new Error(payload.error || res.statusText);
 
     allGroups = payload.groups || [];
+    groupSearch.placeholder = TEXT.searchGroups(allGroups.length);
     if (!allGroups.length) {
       groupPick.replaceChildren(emptyLine(TEXT.noGroups(payload.totalChats || 0)));
       return;
@@ -226,6 +256,9 @@ async function loadGroups() {
     renderMetagroups();
   } catch (err) {
     groupPick.replaceChildren(emptyLine(TEXT.groupsFailed(err.message)));
+  } finally {
+    groupsLoading = false;
+    renderLoadingState();
   }
 }
 

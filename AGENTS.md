@@ -38,6 +38,7 @@ Main entry points:
 - WhatsApp authentication is stored by `whatsapp-web.js` under `<DATA_DIR>/.wwebjs_auth/`, cache under `<DATA_DIR>/.wwebjs_cache/`. On the server, user data is in `deploy/data/<name>/`.
 - If `APP_PASSWORD` is set, every route needs HTTP Basic auth (any username). The server exits at startup if `HOST` is not loopback and `APP_PASSWORD` is empty.
 - If `ready` hasn't fired 3 min after `authenticated` (upstream session-restore hang), `server.js` destroys and re-initializes the client.
+- WhatsApp keeps syncing after `ready`; `/api/status` reports `syncing`/`syncPercent` (below 100% and updated within 30 s). The UI shows an amber "loading groups" state until both that and `/api/groups` finish, then reloads the group list.
 - Browser lookup: `CHROME_PATH`, then Windows Chrome/Edge and Linux Chrome/Chromium paths, then Puppeteer's bundled Chrome (used in Docker).
 - The only user-facing send workflow is creating and canceling future timings, from the web UI or from the self-chat (`chatCommands.js`). The self-chat handler must never react in any other chat.
 - Metagroups are the only way to choose timing recipients. The server resolves `metagroupIds` to group IDs when the timing is saved, so deleting a metagroup does not change saved timings.

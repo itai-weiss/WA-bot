@@ -24,7 +24,10 @@ First WhatsApp connection
 2. Open WhatsApp on your phone.
 3. Go to Settings -> Linked devices -> Link a device.
 4. Scan the QR code.
-5. After it connects, the timing page appears.
+5. After it connects, the timing page appears. While the group list is
+   still loading, the top of the page says "טוען קבוצות…" with a blinking
+   yellow dot. Wait until it says "מחובר" with a green dot before creating
+   meta-groups, so every group is in the list.
 
 Creating a scheduled message
 ----------------------------

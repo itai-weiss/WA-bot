@@ -90,6 +90,35 @@ button { cursor: pointer; }
 .dot.ready { background: var(--green); }
 .dot.error { background: var(--red); }
 .dot.pending { background: #C9A227; }
+.dot.busy { animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+
+/* Shown while the group list is still loading from WhatsApp. */
+.loading-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #FBF3D9;
+  color: #6B5310;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.loading-note[hidden] { display: none; }
+.loading-note::before {
+  content: "";
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 3px;
+  border: 2px solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .clock {
   padding-inline-start: 10px;
@@ -703,4 +732,5 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; scroll-behavior: auto !important; }
+  .dot.busy, .loading-note::before { animation: none; }
 }

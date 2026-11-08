@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const express = require('express');
 const multer = require('multer');
 
-const { createClient, state, setInitializeError } = require('./whatsapp');
+const { createClient, state, setInitializeError, syncStatus } = require('./whatsapp');
 const timings = require('./timings');
 const metagroups = require('./metagroups');
 const keepAwake = require('./keepAwake');
@@ -117,6 +117,7 @@ app.get('/api/status', (req, res) => {
     port: boundPort,
     keepAwake: keepAwake.active(),
     nextAt: timings.nextPendingAt(),
+    ...syncStatus(),
   });
 });
 

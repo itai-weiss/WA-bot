@@ -56,6 +56,7 @@
             </div>
             <p class="hint">בחרו מטא-קבוצה אחת או יותר. מטא-קבוצה היא רשימת קבוצות שמורה, ואפשר ליצור אחת גם עם קבוצה בודדת.</p>
 
+            <p id="groups-loading" class="loading-note" role="status" hidden></p>
             <ul id="metagroup-list" class="mg-list" aria-label="מטא-קבוצות"></ul>
             <p id="mg-empty" class="mg-empty">עדיין אין מטא-קבוצות. צרו אחת כדי לבחור למי לשלוח.</p>
             <button type="button" id="new-metagroup" class="btn-quiet new-mg">צור מטא-קבוצה</button>
@@ -123,6 +124,7 @@
           <input type="search" id="group-search" placeholder="חפש קבוצה…" aria-label="חפש קבוצה" />
           <span id="draft-count" class="step-aux">0 נבחרו</span>
         </div>
+        <p id="mg-loading" class="loading-note" role="status" hidden></p>
         <div id="group-pick" class="group-pick" role="group" aria-label="קבוצות">
           <p class="empty">טוען קבוצות…</p>
         </div>
@@ -149,6 +151,7 @@
         <section id="help-groups">
           <h3>מטא-קבוצות</h3>
           <p>שולחים תמיד למטא-קבוצות. מטא-קבוצה היא רשימת קבוצות שמורה עם שם, למשל "ועד הבית" או "כל ההורים". היא יכולה להכיל גם קבוצה אחת בלבד.</p>
+          <p>מיד אחרי החיבור, רשימת הקבוצות עוד נטענת מ-WhatsApp. בזמן הזה כתוב למעלה <em>טוען קבוצות…</em> עם נקודה צהובה מהבהבת, ומופיעה הודעה צהובה. כשכתוב <em>מחובר</em> עם נקודה ירוקה, הרשימה מלאה.</p>
           <p>כדי ליצור אחת לוחצים <em>צור מטא-קבוצה</em>, נותנים שם, מחפשים ומסמנים קבוצות ושומרים. המטא-קבוצה החדשה נבחרת מיד לתזמון.</p>
           <p>לחיצה על מטא-קבוצה בוחרת אותה, ולחיצה נוספת מבטלת את הבחירה. אפשר לבחור כמה מטא-קבוצות יחד, וקבוצה שמופיעה בשתיהן תקבל את ההודעות פעם אחת בלבד. ה-× מוחק מטא-קבוצה; תזמונים שכבר נשמרו יישלחו כרגיל.</p>
         </section>

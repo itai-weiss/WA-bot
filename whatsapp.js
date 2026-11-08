@@ -11,6 +11,8 @@ const state = {
   phase: 'starting',
   startupError: null,
   browserPath: null,
+  syncPercent: null,
+  syncUpdatedAt: 0,
 };
 
 function clearStartupError() {
@@ -102,6 +104,14 @@ function createClient() {
   });
 
   client.on('loading_screen', (percent, message) => {
+    // After 'ready', WhatsApp keeps reporting sync progress; record it instead of
+    // flipping the app back to a loading phase.
+    if (state.ready) {
+      state.syncPercent = Number(percent);
+      state.syncUpdatedAt = Date.now();
+      console.log(`Syncing WhatsApp: ${percent}%`);
+      return;
+    }
     state.phase = 'loading';
     clearStartupError();
     console.log(`Loading WhatsApp Web: ${percent}% ${message || ''}`.trim());
@@ -126,6 +136,8 @@ function createClient() {
   });
 
   client.on('ready', async () => {
+    state.syncPercent = null;
+    state.syncUpdatedAt = 0;
     state.ready = true;
     state.qrDataUrl = null;
     state.phase = 'ready';
@@ -162,4 +174,17 @@ function createClient() {
   return { client, state };
 }
 
-module.exports = { createClient, state, setInitializeError };
+// Still syncing after 'ready' while progress is below 100%. Progress sometimes stops
+// at 99% without a final event, so a quiet period also counts as done.
+// ponytail: fixed 30 s quiet window; tune if large accounts stall longer mid-sync.
+const SYNC_QUIET_MS = 30 * 1000;
+function syncStatus() {
+  const syncing =
+    state.ready &&
+    state.syncPercent !== null &&
+    state.syncPercent < 100 &&
+    Date.now() - state.syncUpdatedAt < SYNC_QUIET_MS;
+  return { syncing, syncPercent: syncing ? state.syncPercent : null };
+}
+
+module.exports = { createClient, state, setInitializeError, syncStatus };
