@@ -101,17 +101,32 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 let boundPort = null;
 
-// WhatsApp Web sometimes reloads its page (right after linking, or while syncing).
-// Calls made meanwhile fail until whatsapp-web.js re-injects, so retry those briefly.
-const PAGE_RELOADING_RE = /Execution context was destroyed|Cannot find context|detached Frame|reading 'getChats'/i;
+// Group ids and names, read straight from WhatsApp Web's in-memory chat list.
+// client.getChats() also asks WhatsApp's servers for every group's metadata (one
+// request per group), which takes minutes on accounts with hundreds of groups.
+function readGroups() {
+  return client.pupPage.evaluate(() => {
+    const chats = window.require('WAWebCollections').Chat.getModelsArray();
+    return {
+      totalChats: chats.length,
+      groups: chats
+        .filter((chat) => chat.groupMetadata)
+        .map((chat) => ({ id: chat.id._serialized || chat.id.$1, name: chat.formattedTitle || '' })),
+    };
+  });
+}
 
-async function getChats(attempts = 6) {
+// WhatsApp Web sometimes reloads its page (right after linking, or while syncing);
+// calls made meanwhile fail until the page is back, so retry those briefly.
+const PAGE_RELOADING_RE = /Execution context was destroyed|Cannot find context|detached Frame|window\.require is not a function|reading 'Chat'/i;
+
+async function listGroups(attempts = 6) {
   for (let attempt = 1; ; attempt++) {
     try {
-      return await client.getChats();
+      return await readGroups();
     } catch (err) {
       if (attempt >= attempts || !state.ready || !PAGE_RELOADING_RE.test(err.message)) throw err;
-      console.warn(`[getChats] WhatsApp page reloading, retry ${attempt}/${attempts - 1}: ${err.message}`);
+      console.warn(`[groups] WhatsApp page reloading, retry ${attempt}/${attempts - 1}: ${err.message}`);
       await new Promise((resolve) => setTimeout(resolve, 3000));
     }
   }
@@ -141,14 +156,12 @@ app.get('/api/groups', async (req, res) => {
   if (!state.ready) return res.status(503).json({ error: getClientUnavailableMessage() });
 
   try {
-    const chats = await getChats();
-    const groups = chats
-      .filter((chat) => chat.isGroup)
-      .map((chat) => ({ id: chat.id._serialized, name: chat.name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    const started = Date.now();
+    const { groups, totalChats } = await listGroups();
+    groups.sort((a, b) => a.name.localeCompare(b.name));
 
-    console.log(`[/api/groups] ${chats.length} chats, ${groups.length} groups`);
-    res.json({ groups, totalChats: chats.length });
+    console.log(`[/api/groups] ${totalChats} chats, ${groups.length} groups (${Date.now() - started} ms)`);
+    res.json({ groups, totalChats });
   } catch (err) {
     console.error('[/api/groups] error:', err.message);
     res.status(500).json({ error: err.message });
@@ -162,10 +175,8 @@ app.get('/api/timings', async (req, res) => {
   const groupNames = {};
 
   try {
-    const chats = await getChats();
-    for (const chat of chats) {
-      if (chat.isGroup) groupNames[chat.id._serialized] = chat.name;
-    }
+    const { groups } = await listGroups();
+    for (const group of groups) groupNames[group.id] = group.name;
   } catch (_) {}
 
   res.json(

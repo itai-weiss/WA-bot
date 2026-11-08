@@ -135,7 +135,7 @@ function createClient() {
     }
   });
 
-  client.on('ready', async () => {
+  client.on('ready', () => {
     state.syncPercent = null;
     state.syncUpdatedAt = 0;
     state.ready = true;
@@ -143,16 +143,6 @@ function createClient() {
     state.phase = 'ready';
     clearStartupError();
     console.log('WhatsApp client ready');
-    try {
-      const chats = await client.getChats();
-      const groups = chats.filter((c) => c.isGroup);
-      console.log(`Initial sync: ${chats.length} chats (${groups.length} groups)`);
-      if (groups.length === 0 && chats.length === 0) {
-        console.log('Chats not synced yet — they should arrive shortly. Try Refresh in the UI.');
-      }
-    } catch (err) {
-      console.warn('Initial chat fetch failed:', err.message);
-    }
   });
 
   client.on('auth_failure', (msg) => {
