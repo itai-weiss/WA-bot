@@ -17,6 +17,7 @@ Main entry points:
 - `eventLog.js` - in-memory recent send log.
 - `public/index.html`, `public/app.js`, `public/styles.css` - admin UI.
 - `list-groups.js` - terminal helper for printing WhatsApp group IDs.
+- `HOW_TO_USE.txt` / `HOW_TO_USE_HE.txt` - end-user guides (English / Hebrew); the in-app Hebrew guide is the `#help-dialog` in `public/index.html`. Keep all three in sync when behavior changes.
 
 ## Commands
 

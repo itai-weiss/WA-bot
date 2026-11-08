@@ -598,6 +598,18 @@ newMgBtn.addEventListener('click', openMetagroupDialog);
 mgForm.addEventListener('submit', saveMetagroup);
 mgCancel.addEventListener('click', () => mgDialog.close());
 addMessageBtn.addEventListener('click', () => addMessage(true));
+
+const helpDialog = $('#help-dialog');
+document.querySelectorAll('[data-help]').forEach((button) => {
+  button.addEventListener('click', () => {
+    helpDialog.showModal();
+    $(`#help-${button.dataset.help}`).scrollIntoView({ block: 'start' });
+  });
+});
+$('#help-close').addEventListener('click', () => helpDialog.close());
+helpDialog.addEventListener('click', (ev) => {
+  if (ev.target === helpDialog) helpDialog.close();
+});
 scheduledAtEl.addEventListener('input', renderWhen);
 
 tickClock();

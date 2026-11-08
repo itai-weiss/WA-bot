@@ -17,6 +17,7 @@
     <header class="bar">
       <div class="bar-inner">
         <p class="brand">תזמוני WhatsApp</p>
+        <button type="button" class="help-open" data-help="overview">מדריך</button>
         <p class="status" aria-live="polite">
           <span id="status-dot" class="dot pending" aria-hidden="true"></span>
           <span id="status-text">מתחבר</span>
@@ -50,6 +51,7 @@
             <div class="step-head">
               <span class="step-no" aria-hidden="true">1</span>
               <h2 id="step-groups" class="step-title">למי לשלוח</h2>
+              <button type="button" class="help-btn" data-help="groups" aria-label="עזרה: מטא-קבוצות">?</button>
               <span id="group-count" class="step-aux">0 נבחרו</span>
             </div>
             <p class="hint">בחרו מטא-קבוצה אחת או יותר. מטא-קבוצה היא רשימת קבוצות שמורה, ואפשר ליצור אחת גם עם קבוצה בודדת.</p>
@@ -63,6 +65,7 @@
             <div class="step-head">
               <span class="step-no" aria-hidden="true">2</span>
               <h2 id="step-messages" class="step-title">מה לשלוח</h2>
+              <button type="button" class="help-btn" data-help="messages" aria-label="עזרה: הודעות וקבצים">?</button>
               <span id="message-count" class="step-aux">הודעה אחת</span>
             </div>
             <p class="hint">כל קבוצה תקבל את ההודעות לפי הסדר. קבצים מצורפים נשלחים עם ההודעה שלהם, והטקסט מופיע ככיתוב.</p>
@@ -77,6 +80,7 @@
             <div class="step-head">
               <span class="step-no" aria-hidden="true">3</span>
               <h2 id="step-time" class="step-title">מתי</h2>
+              <button type="button" class="help-btn" data-help="time" aria-label="עזרה: מועד שליחה">?</button>
               <span id="tz-label" class="step-aux">Asia/Jerusalem</span>
             </div>
             <div class="when">
@@ -94,7 +98,10 @@
         </form>
 
         <aside class="queue" aria-labelledby="queue-title">
-          <h2 id="queue-title" class="queue-title">תזמונים קרובים</h2>
+          <div class="queue-head">
+            <h2 id="queue-title" class="queue-title">תזמונים קרובים</h2>
+            <button type="button" class="help-btn" data-help="queue" aria-label="עזרה: תזמונים קרובים">?</button>
+          </div>
           <ul id="timing-list" class="timing-list">
             <li class="empty">— אין תזמונים קרובים —</li>
           </ul>
@@ -102,6 +109,7 @@
           <ul id="done-list" class="timing-list done-list"></ul>
           <p class="footnote">
             עובד רק על המחשב הזה. התזמונים נשמרים מקומית. הטלפון יכול להיות כבוי, אבל המחשב צריך להישאר דלוק עם האפליקציה פתוחה.
+            <button type="button" class="btn-link" data-help="away">מה קורה כשהולכים לישון?</button>
           </p>
         </aside>
       </div>
@@ -124,6 +132,54 @@
           <button type="button" id="mg-cancel" class="btn-quiet">ביטול</button>
         </div>
       </form>
+    </dialog>
+
+    <dialog id="help-dialog" class="help-dialog" aria-labelledby="help-title">
+      <div class="help-body">
+        <div class="help-top">
+          <h2 id="help-title" class="help-title">מדריך קצר</h2>
+          <button type="button" id="help-close" class="btn-quiet">סגור</button>
+        </div>
+
+        <section id="help-overview">
+          <h3>איך זה עובד</h3>
+          <p>בוחרים למי לשלוח, כותבים הודעה אחת או יותר, קובעים מועד ולוחצים <em>שמור תזמון</em>. בזמן שנקבע האפליקציה שולחת את ההודעות מחשבון ה-WhatsApp שלכם לכל הקבוצות שנבחרו. אין כאן שליחה מיידית: כל שליחה היא תזמון.</p>
+        </section>
+
+        <section id="help-groups">
+          <h3>מטא-קבוצות</h3>
+          <p>שולחים תמיד למטא-קבוצות. מטא-קבוצה היא רשימת קבוצות שמורה עם שם, למשל "ועד הבית" או "כל ההורים". היא יכולה להכיל גם קבוצה אחת בלבד.</p>
+          <p>כדי ליצור אחת לוחצים <em>צור מטא-קבוצה</em>, נותנים שם, מחפשים ומסמנים קבוצות ושומרים. המטא-קבוצה החדשה נבחרת מיד לתזמון.</p>
+          <p>לחיצה על מטא-קבוצה בוחרת אותה, ולחיצה נוספת מבטלת את הבחירה. אפשר לבחור כמה מטא-קבוצות יחד, וקבוצה שמופיעה בשתיהן תקבל את ההודעות פעם אחת בלבד. ה-× מוחק מטא-קבוצה; תזמונים שכבר נשמרו יישלחו כרגיל.</p>
+        </section>
+
+        <section id="help-messages">
+          <h3>הודעות וקבצים</h3>
+          <p>אפשר לשלוח עד 10 הודעות בתזמון אחד. כל קבוצה מקבלת אותן לפי הסדר, עם הפסקה קצרה ביניהן. <em>הוסף הודעה</em> מוסיף הודעה בסוף הרשימה, ו<em>הסר</em> מוחק אותה.</p>
+          <p>לכל הודעה אפשר לצרף עד 10 קבצים, עד 16MB לכל קובץ. הטקסט של ההודעה מופיע ככיתוב של הקובץ הראשון. הודעה יכולה להיות רק טקסט, רק קבצים, או שניהם. הקבצים נשמרים במחשב עד השליחה או עד ביטול התזמון.</p>
+        </section>
+
+        <section id="help-time">
+          <h3>מועד שליחה</h3>
+          <p>בוחרים תאריך ושעה בעתיד. השעה הגדולה מתחת לשדה מראה מתי בדיוק ההודעות ייצאו. השעה לפי אזור הזמן שמופיע ליד השדה.</p>
+        </section>
+
+        <section id="help-away">
+          <h3>אחרי השמירה: אפשר ללכת לישון</h3>
+          <ul>
+            <li><strong>הטלפון</strong> יכול להיות כבוי או במצב טיסה. WhatsApp שולח מהמחשב כמכשיר מקושר. צריך רק שהטלפון יתחבר לאינטרנט לפחות פעם בשבועיים, אחרת WhatsApp מנתק את המכשיר המקושר.</li>
+            <li><strong>המחשב</strong> צריך להישאר דלוק עם חלון האפליקציה פתוח. כל עוד יש תזמון שממתין, האפליקציה מונעת מהמחשב להירדם לבד, ושורה כחולה בראש המסך מציינת זאת. המסך יכול לכבות.</li>
+            <li>סגירת המכסה של מחשב נייד, בחירה ב"שינה" או כיבוי יעצרו את השליחה.</li>
+            <li>אם המחשב בכל זאת היה כבוי או רדום בזמן השליחה, ההודעות יישלחו מיד כשהאפליקציה תחזור לפעול, בתנאי שעברו עד 6 שעות. אחרי יותר מ-6 שעות התזמון יסומן <em>לא נשלח בזמן</em> ולא יישלח, כדי שהודעה לא תגיע באמצע הלילה.</li>
+          </ul>
+        </section>
+
+        <section id="help-queue">
+          <h3>תזמונים קרובים ונשלחו לאחרונה</h3>
+          <p><em>תזמונים קרובים</em> מציג מה עוד לא נשלח. <em>בטל</em> מוחק את התזמון ואת הקבצים שלו, וההודעות לא יישלחו.</p>
+          <p><em>נשלחו לאחרונה</em> מציג את 24 השעות האחרונות: <em>נשלח</em>, <em>נשלח באיחור</em> (אחרי שהמחשב חזר לפעול), <em>נכשל</em> בחלק מהקבוצות, או <em>לא נשלח בזמן</em>. <em>הסר מהרשימה</em> רק מנקה את השורה.</p>
+        </section>
+      </div>
     </dialog>
 
     <template id="message-template">

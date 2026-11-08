@@ -108,6 +108,67 @@ button { cursor: pointer; }
   text-align: center;
 }
 
+.help-open {
+  margin-inline-end: auto;
+  margin-inline-start: 16px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.help-open:hover { color: var(--blue); border-color: var(--blue); }
+
+.help-btn {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+.help-btn:hover { color: var(--blue); border-color: var(--blue); }
+
+.queue-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.queue-head .queue-title { margin: 0; }
+
+.footnote .btn-link { display: block; margin-top: 6px; }
+
+.help-dialog {
+  width: min(640px, calc(100vw - 32px));
+  max-height: min(80vh, 760px);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+}
+.help-dialog::backdrop { background: rgba(24, 33, 58, 0.45); }
+.help-body { padding: 0 28px 28px; }
+.help-top {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.help-title { margin: 0; font-family: var(--font-display); font-size: 26px; font-weight: 400; }
+.help-body section { padding-top: 18px; scroll-margin-top: 72px; }
+.help-body h3 { margin: 0 0 6px; font-size: 18px; font-weight: 700; color: var(--blue); }
+.help-body p, .help-body li { margin: 0 0 8px; max-width: 64ch; line-height: 1.65; }
+.help-body ul { margin: 0; padding-inline-start: 20px; }
+.help-body em { font-style: normal; font-weight: 600; }
+
 /* ── Layout ── */
 
 .stage {
@@ -634,6 +695,10 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
   .hint { padding-inline-start: 0; }
   .when { grid-template-columns: minmax(0, 1fr); padding-inline-start: 0; gap: 12px; }
   .startup { padding: 24px; }
+  .help-body { padding: 0 18px 22px; }
+  .help-open { margin-inline-start: 8px; }
+  .brand { font-size: 17px; white-space: nowrap; }
+  .bar-inner { gap: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

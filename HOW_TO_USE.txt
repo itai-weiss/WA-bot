@@ -1,6 +1,9 @@
 WA-bot: simple setup and use
 ============================
 
+Hebrew version: HOW_TO_USE_HE.txt (מדריך בעברית).
+In the app, the "מדריך" button and the ? next to each step open a Hebrew guide.
+
 Before starting
 ---------------
 1. Install Google Chrome.
@@ -41,8 +44,8 @@ Important
   The screen can turn off, but do not close the laptop lid or shut down.
 - If the PC was off at send time, messages go out when the app is
   running again, up to 6 hours late. Older ones are marked as not sent.
-- Your phone can be off; it does not need to be connected.
-- Keep the phone with WhatsApp online.
+- Your phone can be off; it only needs to connect to the internet at least
+  once every two weeks, or WhatsApp unlinks this computer.
 - This uses your personal WhatsApp Web session.
 - Do not use it for spam or commercial bulk sending.
 - The app only runs on this computer at 127.0.0.1.

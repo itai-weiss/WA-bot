@@ -32,6 +32,8 @@ Once connected, the UI only supports timings:
 - choose a future send time
 - save or cancel upcoming timings
 
+A Hebrew guide opens from the "מדריך" button and the `?` next to each step. `HOW_TO_USE.txt` (English) and `HOW_TO_USE_HE.txt` (Hebrew) are the end-user setup guides shipped with the friend zip.
+
 There is no immediate-send workflow. Attachments are only sent as part of a saved timing.
 
 Timings are stored locally in `timings.json`.
