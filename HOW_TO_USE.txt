@@ -29,12 +29,18 @@ Creating a scheduled message
 2. Optional: save the selected groups as a meta-group.
    Next time, choose that meta-group to select many groups in one click.
 3. Write a message and/or attach files.
+   Click "Add message" to send several messages in a row.
 4. Choose a future date and time.
 5. Click "Save timing".
 
 Important
 ---------
 - Keep the start.bat window open while messages need to be sent.
+- The PC stays awake by itself until pending messages are sent.
+  The screen can turn off, but do not close the laptop lid or shut down.
+- If the PC was off at send time, messages go out when the app is
+  running again, up to 6 hours late. Older ones are marked as not sent.
+- Your phone can be off; it does not need to be connected.
 - Keep the phone with WhatsApp online.
 - This uses your personal WhatsApp Web session.
 - Do not use it for spam or commercial bulk sending.

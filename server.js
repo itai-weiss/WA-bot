@@ -7,13 +7,14 @@ const multer = require('multer');
 const { createClient, state, setInitializeError } = require('./whatsapp');
 const timings = require('./timings');
 const metagroups = require('./metagroups');
+const keepAwake = require('./keepAwake');
 
 const HOST = process.env.HOST || '127.0.0.1';
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 const MAX_PORT_ATTEMPTS = 10;
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 16 * 1024 * 1024, files: 10 },
+  limits: { fileSize: 16 * 1024 * 1024, files: 30 },
 });
 
 const { client } = createClient();
@@ -21,7 +22,7 @@ const { client } = createClient();
 if (client) {
   client.on('ready', () => {
     try {
-      timings.init(client);
+      timings.init(client, () => state.ready);
     } catch (err) {
       console.warn('Could not initialize timings:', err.message);
     }
@@ -53,6 +54,8 @@ app.get('/api/status', (req, res) => {
     tz: process.env.TZ || 'Asia/Jerusalem',
     host: HOST,
     port: boundPort,
+    keepAwake: keepAwake.active(),
+    nextAt: timings.nextPendingAt(),
   });
 });
 
@@ -122,13 +125,25 @@ app.delete('/api/metagroups/:id', (req, res) => {
   }
 });
 
-app.post('/api/timings', upload.array('files', 10), (req, res) => {
+// Body: groupIds[], scheduledAt, messages (JSON [{text}]); files for message i in field files_<i>.
+app.post('/api/timings', upload.any(), (req, res) => {
   if (!state.ready) return res.status(503).json({ error: getClientUnavailableMessage() });
 
   try {
-    const rawIds = req.body.groupIds;
-    const groupIds = [].concat(rawIds || []).filter(Boolean);
-    const timing = timings.create({ ...req.body, groupIds }, req.files || []);
+    const groupIds = [].concat(req.body.groupIds || []).filter(Boolean);
+    let messages;
+    try {
+      messages = JSON.parse(req.body.messages || '[]');
+    } catch (_) {
+      return res.status(400).json({ error: 'messages must be JSON' });
+    }
+    const filesByMessage = [];
+    for (const file of req.files || []) {
+      const match = /^files_(\d+)$/.exec(file.fieldname);
+      if (!match) continue;
+      (filesByMessage[Number(match[1])] ||= []).push(file);
+    }
+    const timing = timings.create({ ...req.body, groupIds, messages }, filesByMessage);
     res.status(201).json(timing);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });

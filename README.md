@@ -28,7 +28,7 @@ Once connected, the UI only supports timings:
 
 - pick one or more groups
 - save a reusable meta-group and apply it later with one click
-- write a text message and optionally attach files
+- write one or more messages (sent in order), each with optional attachments
 - choose a future send time
 - save or cancel upcoming timings
 
@@ -36,8 +36,22 @@ There is no immediate-send workflow. Attachments are only sent as part of a save
 
 Timings are stored locally in `timings.json`.
 
+## Leaving it running
+
+- While any timing is pending, the app asks Windows not to idle-sleep (`keepAwake.js`). The screen may turn off; closing the lid, choosing Sleep, or shutting down still stops sending.
+- If the PC was asleep or the app closed at send time, the timing is sent as soon as the app is running again, if it is at most 6 hours late. Older ones are shown as missed instead.
+- The phone can be off: WhatsApp linked devices work without it (for up to about 14 days).
+
+## Test
+
+```powershell
+npm test
+```
+
+Runs `test-timings.js` against a temp copy with a fake WhatsApp client; nothing is sent and real data is untouched.
+
 ## Notes
 
 - The admin UI binds to `127.0.0.1` by default and has no authentication. Do not expose it publicly without adding auth.
 - This drives your personal WhatsApp account via WhatsApp Web. It is suitable for personal/light use, not commercial bulk sending.
-- The phone with your WhatsApp must stay online for the linked-device session to work.
+- The phone does not need to stay online; WhatsApp logs out linked devices after about 14 days without the phone connecting.

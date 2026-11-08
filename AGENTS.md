@@ -10,7 +10,9 @@ Main entry points:
 
 - `server.js` - Express API, static UI hosting, and startup.
 - `whatsapp.js` - WhatsApp Web client creation, QR/status lifecycle, browser discovery.
-- `timings.js` - one-shot scheduled sends persisted in `timings.json`.
+- `timings.js` - one-shot scheduled sends (one or more messages each) persisted in `timings.json`; a 15s due-check sends them, including late ones up to 6h.
+- `keepAwake.js` - keeps Windows from idle-sleeping while timings are pending.
+- `test-timings.js` - self-check for `timings.js` (`npm test`), uses a fake client and a temp dir.
 - `metagroups.js` - saved group bundles persisted in `metagroups.json`.
 - `eventLog.js` - in-memory recent send log.
 - `public/index.html`, `public/app.js`, `public/styles.css` - admin UI.
@@ -23,7 +25,7 @@ Main entry points:
 - List WhatsApp groups: `npm run groups`
 - Basic JS syntax check for changed files: `node --check <file>`
 
-There is currently no automated test script in `package.json`.
+`npm test` runs `test-timings.js`; it never sends messages or touches real data.
 
 ## Runtime Behavior
 
