@@ -20,6 +20,8 @@ if not exist ".env" (
   echo Created .env from .env.example
 )
 
+rem The app uses the installed Chrome/Edge; skip puppeteer's own Chrome download.
+set PUPPETEER_SKIP_DOWNLOAD=true
 npm install
 if errorlevel 1 (
   echo.
