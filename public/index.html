@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>תזמוני WhatsApp</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2320A874'/%3E%3Cpath d='M8 9h16v4h-6v11h-4V13H8z' fill='white'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">■</span>
+          <span class="brand-name">WA·TIME</span>
+          <span class="brand-sub">תזמוני שליחה מקומיים</span>
+        </div>
+        <div class="topbar-status">
+          <span id="status-dot" class="dot pending" aria-hidden="true"></span>
+          <span id="status-text" class="mono">מתחבר</span>
+          <span class="sep" aria-hidden="true">·</span>
+          <span id="clock" class="mono">--:--:--</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="stage">
+      <section id="qr-panel" class="panel paper" hidden>
+        <p id="startup-kicker" class="kicker">חיבור WhatsApp</p>
+        <h1 id="startup-title" class="display">מכין את החיבור.</h1>
+        <p id="startup-note" class="status-note">
+          המערכת מפעילה את WhatsApp Web ומכינה את החשבון לתזמונים.
+        </p>
+
+        <ol id="qr-steps" class="steps" hidden>
+          <li>
+            <span class="step-no mono">01</span>
+            <span class="step-body">פותחים את WhatsApp בטלפון.</span>
+          </li>
+          <li>
+            <span class="step-no mono">02</span>
+            <span class="step-body">נכנסים להגדרות ואז למכשירים מקושרים.</span>
+          </li>
+          <li>
+            <span class="step-no mono">03</span>
+            <span class="step-body">לוחצים על <em>קישור מכשיר</em> וסורקים כאן.</span>
+          </li>
+        </ol>
+
+        <div id="qr-frame" class="qr-frame" hidden>
+          <img id="qr-img" alt="קוד QR של WhatsApp" />
+        </div>
+      </section>
+
+      <section id="timing-panel" class="panel paper" hidden>
+        <p class="kicker">תזמון חדש</p>
+        <div class="display-row">
+          <h1 class="display">קבע מתי לשלוח.</h1>
+          <button type="button" class="manual-btn" data-manual="overview" aria-label="עזרה כללית">?</button>
+        </div>
+
+        <form id="timing-form" class="form" autocomplete="off">
+          <div class="field">
+            <div class="field-head">
+              <label class="field-label mono">יעדים</label>
+              <button type="button" class="manual-btn" data-manual="targets" aria-label="עזרה על יעדים">?</button>
+              <span id="group-count" class="field-aux mono">0 נבחרו</span>
+            </div>
+
+            <div class="metagroup-row">
+              <div class="select-wrap">
+                <select id="metagroup-select">
+                  <option value="">בחר מטא-קבוצה…</option>
+                </select>
+                <span class="select-arrow" aria-hidden="true">▾</span>
+              </div>
+              <button type="button" id="apply-metagroup" class="ghost-btn mono">בחר</button>
+            </div>
+
+            <div class="group-search">
+              <input
+                type="text"
+                id="group-search"
+                placeholder="חפש קבוצה…"
+                autocomplete="off"
+              />
+              <button
+                type="button"
+                class="group-search-clear"
+                id="group-search-clear"
+                aria-label="נקה חיפוש"
+              >×</button>
+            </div>
+
+            <div id="group-pick" class="group-pick">
+              <div class="group-pick-empty mono">טוען קבוצות…</div>
+            </div>
+
+            <div class="metagroup-save">
+              <input
+                type="text"
+                id="metagroup-name"
+                class="mg-name-input mono"
+                placeholder="שם למטא-קבוצה מהבחירה הנוכחית…"
+                autocomplete="off"
+              />
+              <button type="button" id="save-metagroup" class="ghost-btn mono">שמור</button>
+            </div>
+
+            <ul id="metagroup-list" class="metagroup-list">
+              <li class="metagroup-empty mono">— אין מטא-קבוצות שמורות —</li>
+            </ul>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <label for="message" class="field-label mono">הודעה</label>
+              <button type="button" class="manual-btn" data-manual="message" aria-label="עזרה על הודעה">?</button>
+              <span id="char-count" class="field-aux mono">0 תווים</span>
+            </div>
+            <textarea
+              id="message"
+              rows="5"
+              placeholder="מה לשלוח בזמן שנקבע?"
+            ></textarea>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <label class="field-label mono">קבצים מצורפים</label>
+              <button type="button" class="manual-btn" data-manual="attachments" aria-label="עזרה על קבצים מצורפים">?</button>
+              <span class="field-aux mono">עד 10 · 16MB לכל קובץ</span>
+            </div>
+            <div class="attach">
+              <label class="attach-btn mono" for="files">
+                <span class="plus" aria-hidden="true">+</span> הוסף קבצים
+              </label>
+              <input id="files" type="file" multiple hidden />
+              <span id="attach-empty" class="field-aux">עדיין לא נוספו קבצים</span>
+            </div>
+            <ul id="chip-list" class="chip-list" aria-live="polite"></ul>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <label for="scheduled-at" class="field-label mono">מועד שליחה</label>
+              <button type="button" class="manual-btn" data-manual="time" aria-label="עזרה על מועד שליחה">?</button>
+              <span id="tz-label" class="field-aux mono">Asia/Jerusalem</span>
+            </div>
+            <input type="datetime-local" id="scheduled-at" />
+          </div>
+
+          <p id="form-error" class="form-error" hidden></p>
+
+          <button type="submit" id="timing-submit" class="transmit">
+            <span class="transmit-label">שמור תזמון</span>
+            <span class="transmit-arrow" aria-hidden="true">←</span>
+          </button>
+        </form>
+
+        <div class="scheduled-queue" id="timing-queue">
+          <div class="queue-head">
+            <p class="kicker" style="margin-top:48px">תזמונים קרובים</p>
+            <button type="button" class="manual-btn" data-manual="queue" aria-label="עזרה על תזמונים קרובים">?</button>
+          </div>
+          <ul id="timing-list" class="timing-list">
+            <li class="timing-empty mono">— אין תזמונים קרובים —</li>
+          </ul>
+        </div>
+      </section>
+
+      <div id="manual-popover" class="manual-popover" role="dialog" aria-modal="false" aria-labelledby="manual-title" hidden>
+        <button type="button" id="manual-close" class="manual-close" aria-label="סגור עזרה">×</button>
+        <p class="kicker">מדריך קצר</p>
+        <h2 id="manual-title" class="manual-title"></h2>
+        <p id="manual-body" class="manual-body"></p>
+      </div>
+
+      <footer class="footnote mono">
+        עובד רק על המחשב הזה · התזמונים נשמרים מקומית · אין שליחה מיידית מהמסך הזה
+      </footer>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

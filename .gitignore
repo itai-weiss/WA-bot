@@ -3,40 +3,22 @@
 .env.*
 !.env.example
 
-# Python bytecode/cache
-__pycache__/
-*.py[cod]
-*$py.class
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
 
-# Virtual environments
-.venv/
-venv/
-env/
+# whatsapp-web.js session + cache
+.wwebjs_auth/
+.wwebjs_cache/
 
-# Build/dist artifacts
-build/
-dist/
-downloads/
-eggs/
-.eggs/
-*.egg-info/
-*.egg
-wheels/
-pip-wheel-metadata/
+# Local timing state
+timings.json
+timing-attachments/
+metagroups.json
 
-# Test/coverage caches
-.pytest_cache/
-.tox/
-.nox/
-.coverage
-.coverage.*
-htmlcov/
-.hypothesis/
-
-# Type checkers
-.mypy_cache/
-.pyre/
-.pytype/
+# Logs
+*.log
 
 # Editors/OS
 .vscode/
@@ -44,8 +26,7 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Databases and local state
-*.db
-*.sqlite3
-*.sqlite
-
+# Local distribution copies / tooling
+WA-bot-for-friend/
+*.zip
+.claude/
