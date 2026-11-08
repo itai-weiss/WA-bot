@@ -1,6 +1,9 @@
 WA-bot: simple setup and use
 ============================
 
+Hebrew version: HOW_TO_USE_HE.txt (מדריך בעברית).
+In the app, the "מדריך" button and the ? next to each step open a Hebrew guide.
+
 Before starting
 ---------------
 1. Install Google Chrome.
@@ -25,17 +28,43 @@ First WhatsApp connection
 
 Creating a scheduled message
 ----------------------------
-1. Choose one or more WhatsApp groups.
-2. Optional: save the selected groups as a meta-group.
-   Next time, choose that meta-group to select many groups in one click.
+1. Recipients are always meta-groups (a saved list of groups).
+   Click "Create meta-group", give it a name and tick its groups.
+   A meta-group can contain just one group.
+2. Click one or more meta-groups to send to them.
 3. Write a message and/or attach files.
+   Click "Add message" to send several messages in a row.
 4. Choose a future date and time.
 5. Click "Save timing".
+
+Scheduling from WhatsApp
+------------------------
+You can also schedule without the web page, in WhatsApp's
+"Message yourself" chat (the chat with your own number):
+1. Send one message with 3 lines:
+     תזמון
+     מחר 18:00
+     קבוצות: name, name
+   The second line is the time (18:00, היום 18:00, מחר 18:00,
+   מחרתיים 9:30, 25/11 18:00 or 25/11/2027 18:00). The third lists
+   meta-group names, separated by commas.
+2. Send 1-10 messages (text, photo or file), in the order they should go out.
+3. Send: תזמון: סוף
+   The reply confirms the timing and gives it a code.
+Other commands: "תזמון: ביטול" cancels a draft, "רשימה" lists meta-groups
+and pending timings, "בטל <code>" cancels a saved timing, "עזרה" shows help.
+The app's replies start with 🤖. Other messages in that chat are left alone,
+and no other chat is read. Timings made this way also show in the web page.
 
 Important
 ---------
 - Keep the start.bat window open while messages need to be sent.
-- Keep the phone with WhatsApp online.
+- The PC stays awake by itself until pending messages are sent.
+  The screen can turn off, but do not close the laptop lid or shut down.
+- If the PC was off at send time, messages go out when the app is
+  running again, up to 6 hours late. Older ones are marked as not sent.
+- Your phone can be off; it only needs to connect to the internet at least
+  once every two weeks, or WhatsApp unlinks this computer.
 - This uses your personal WhatsApp Web session.
 - Do not use it for spam or commercial bulk sending.
 - The app only runs on this computer at 127.0.0.1.

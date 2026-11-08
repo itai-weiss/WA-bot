@@ -4,188 +4,212 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>תזמוני WhatsApp</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2320A874'/%3E%3Cpath d='M8 9h16v4h-6v11h-4V13H8z' fill='white'/%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232346A8'/%3E%3Cpath d='M0 26l6-6h4l-6 6zM8 26l6-6h4l-6 6zM16 26l6-6h4l-6 6z' fill='%23D7263D'/%3E%3Ccircle cx='16' cy='13' r='7' fill='none' stroke='white' stroke-width='2.4'/%3E%3Cpath d='M16 9v4l3 2' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=Secular+One&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <header class="topbar">
-      <div class="topbar-inner">
-        <div class="brand">
-          <span class="brand-mark" aria-hidden="true">■</span>
-          <span class="brand-name">WA·TIME</span>
-          <span class="brand-sub">תזמוני שליחה מקומיים</span>
-        </div>
-        <div class="topbar-status">
+    <header class="bar">
+      <div class="bar-inner">
+        <p class="brand">תזמוני WhatsApp</p>
+        <button type="button" class="help-open" data-help="overview">מדריך</button>
+        <p class="status" aria-live="polite">
           <span id="status-dot" class="dot pending" aria-hidden="true"></span>
-          <span id="status-text" class="mono">מתחבר</span>
-          <span class="sep" aria-hidden="true">·</span>
-          <span id="clock" class="mono">--:--:--</span>
-        </div>
+          <span id="status-text">מתחבר</span>
+          <span id="clock" class="clock">--:--</span>
+        </p>
       </div>
+      <p id="awake-note" class="awake-note" hidden></p>
     </header>
 
     <main class="stage">
-      <section id="qr-panel" class="panel paper" hidden>
-        <p id="startup-kicker" class="kicker">חיבור WhatsApp</p>
-        <h1 id="startup-title" class="display">מכין את החיבור.</h1>
-        <p id="startup-note" class="status-note">
+      <section id="qr-panel" class="startup" hidden>
+        <h1 id="startup-title" class="startup-title">מכין את החיבור.</h1>
+        <p id="startup-note" class="startup-note">
           המערכת מפעילה את WhatsApp Web ומכינה את החשבון לתזמונים.
         </p>
-
-        <ol id="qr-steps" class="steps" hidden>
-          <li>
-            <span class="step-no mono">01</span>
-            <span class="step-body">פותחים את WhatsApp בטלפון.</span>
-          </li>
-          <li>
-            <span class="step-no mono">02</span>
-            <span class="step-body">נכנסים להגדרות ואז למכשירים מקושרים.</span>
-          </li>
-          <li>
-            <span class="step-no mono">03</span>
-            <span class="step-body">לוחצים על <em>קישור מכשיר</em> וסורקים כאן.</span>
-          </li>
+        <ol id="qr-steps" class="qr-steps" hidden>
+          <li>פותחים את WhatsApp בטלפון.</li>
+          <li>נכנסים להגדרות ואז למכשירים מקושרים.</li>
+          <li>לוחצים על <em>קישור מכשיר</em> וסורקים כאן.</li>
         </ol>
-
         <div id="qr-frame" class="qr-frame" hidden>
           <img id="qr-img" alt="קוד QR של WhatsApp" />
         </div>
       </section>
 
-      <section id="timing-panel" class="panel paper" hidden>
-        <p class="kicker">תזמון חדש</p>
-        <div class="display-row">
-          <h1 class="display">קבע מתי לשלוח.</h1>
-          <button type="button" class="manual-btn" data-manual="overview" aria-label="עזרה כללית">?</button>
-        </div>
+      <div id="timing-panel" class="workspace" hidden>
+        <form id="timing-form" class="compose" autocomplete="off" novalidate>
+          <h1 class="compose-title">תזמון חדש</h1>
 
-        <form id="timing-form" class="form" autocomplete="off">
-          <div class="field">
-            <div class="field-head">
-              <label class="field-label mono">יעדים</label>
-              <button type="button" class="manual-btn" data-manual="targets" aria-label="עזרה על יעדים">?</button>
-              <span id="group-count" class="field-aux mono">0 נבחרו</span>
+          <section class="step" aria-labelledby="step-groups">
+            <div class="step-head">
+              <span class="step-no" aria-hidden="true">1</span>
+              <h2 id="step-groups" class="step-title">למי לשלוח</h2>
+              <button type="button" class="help-btn" data-help="groups" aria-label="עזרה: מטא-קבוצות">?</button>
+              <span id="group-count" class="step-aux">0 נבחרו</span>
             </div>
+            <p class="hint">בחרו מטא-קבוצה אחת או יותר. מטא-קבוצה היא רשימת קבוצות שמורה, ואפשר ליצור אחת גם עם קבוצה בודדת.</p>
 
-            <div class="metagroup-row">
-              <div class="select-wrap">
-                <select id="metagroup-select">
-                  <option value="">בחר מטא-קבוצה…</option>
-                </select>
-                <span class="select-arrow" aria-hidden="true">▾</span>
-              </div>
-              <button type="button" id="apply-metagroup" class="ghost-btn mono">בחר</button>
+            <ul id="metagroup-list" class="mg-list" aria-label="מטא-קבוצות"></ul>
+            <p id="mg-empty" class="mg-empty">עדיין אין מטא-קבוצות. צרו אחת כדי לבחור למי לשלוח.</p>
+            <button type="button" id="new-metagroup" class="btn-quiet new-mg">צור מטא-קבוצה</button>
+          </section>
+
+          <section class="step" aria-labelledby="step-messages">
+            <div class="step-head">
+              <span class="step-no" aria-hidden="true">2</span>
+              <h2 id="step-messages" class="step-title">מה לשלוח</h2>
+              <button type="button" class="help-btn" data-help="messages" aria-label="עזרה: הודעות וקבצים">?</button>
+              <span id="message-count" class="step-aux">הודעה אחת</span>
             </div>
+            <p class="hint">כל קבוצה תקבל את ההודעות לפי הסדר. קבצים מצורפים נשלחים עם ההודעה שלהם, והטקסט מופיע ככיתוב.</p>
 
-            <div class="group-search">
-              <input
-                type="text"
-                id="group-search"
-                placeholder="חפש קבוצה…"
-                autocomplete="off"
-              />
-              <button
-                type="button"
-                class="group-search-clear"
-                id="group-search-clear"
-                aria-label="נקה חיפוש"
-              >×</button>
+            <div class="envelope">
+              <ol id="message-stack" class="message-stack"></ol>
+              <button type="button" id="add-message" class="add-message">הוסף הודעה</button>
             </div>
+          </section>
 
-            <div id="group-pick" class="group-pick">
-              <div class="group-pick-empty mono">טוען קבוצות…</div>
+          <section class="step" aria-labelledby="step-time">
+            <div class="step-head">
+              <span class="step-no" aria-hidden="true">3</span>
+              <h2 id="step-time" class="step-title">מתי</h2>
+              <button type="button" class="help-btn" data-help="time" aria-label="עזרה: מועד שליחה">?</button>
+              <span id="tz-label" class="step-aux">Asia/Jerusalem</span>
             </div>
-
-            <div class="metagroup-save">
-              <input
-                type="text"
-                id="metagroup-name"
-                class="mg-name-input mono"
-                placeholder="שם למטא-קבוצה מהבחירה הנוכחית…"
-                autocomplete="off"
-              />
-              <button type="button" id="save-metagroup" class="ghost-btn mono">שמור</button>
+            <div class="when">
+              <input type="datetime-local" id="scheduled-at" aria-label="מועד שליחה" />
+              <p id="when-preview" class="when-preview" aria-live="polite">
+                <span id="when-time" class="when-time">--:--</span>
+                <span id="when-date" class="when-date"></span>
+              </p>
             </div>
+          </section>
 
-            <ul id="metagroup-list" class="metagroup-list">
-              <li class="metagroup-empty mono">— אין מטא-קבוצות שמורות —</li>
-            </ul>
-          </div>
+          <p id="form-error" class="form-error" role="alert" hidden></p>
 
-          <div class="field">
-            <div class="field-head">
-              <label for="message" class="field-label mono">הודעה</label>
-              <button type="button" class="manual-btn" data-manual="message" aria-label="עזרה על הודעה">?</button>
-              <span id="char-count" class="field-aux mono">0 תווים</span>
-            </div>
-            <textarea
-              id="message"
-              rows="5"
-              placeholder="מה לשלוח בזמן שנקבע?"
-            ></textarea>
-          </div>
-
-          <div class="field">
-            <div class="field-head">
-              <label class="field-label mono">קבצים מצורפים</label>
-              <button type="button" class="manual-btn" data-manual="attachments" aria-label="עזרה על קבצים מצורפים">?</button>
-              <span class="field-aux mono">עד 10 · 16MB לכל קובץ</span>
-            </div>
-            <div class="attach">
-              <label class="attach-btn mono" for="files">
-                <span class="plus" aria-hidden="true">+</span> הוסף קבצים
-              </label>
-              <input id="files" type="file" multiple hidden />
-              <span id="attach-empty" class="field-aux">עדיין לא נוספו קבצים</span>
-            </div>
-            <ul id="chip-list" class="chip-list" aria-live="polite"></ul>
-          </div>
-
-          <div class="field">
-            <div class="field-head">
-              <label for="scheduled-at" class="field-label mono">מועד שליחה</label>
-              <button type="button" class="manual-btn" data-manual="time" aria-label="עזרה על מועד שליחה">?</button>
-              <span id="tz-label" class="field-aux mono">Asia/Jerusalem</span>
-            </div>
-            <input type="datetime-local" id="scheduled-at" />
-          </div>
-
-          <p id="form-error" class="form-error" hidden></p>
-
-          <button type="submit" id="timing-submit" class="transmit">
-            <span class="transmit-label">שמור תזמון</span>
-            <span class="transmit-arrow" aria-hidden="true">←</span>
-          </button>
+          <button type="submit" id="timing-submit" class="submit">שמור תזמון</button>
         </form>
 
-        <div class="scheduled-queue" id="timing-queue">
+        <aside class="queue" aria-labelledby="queue-title">
           <div class="queue-head">
-            <p class="kicker" style="margin-top:48px">תזמונים קרובים</p>
-            <button type="button" class="manual-btn" data-manual="queue" aria-label="עזרה על תזמונים קרובים">?</button>
+            <h2 id="queue-title" class="queue-title">תזמונים קרובים</h2>
+            <button type="button" class="help-btn" data-help="queue" aria-label="עזרה: תזמונים קרובים">?</button>
           </div>
           <ul id="timing-list" class="timing-list">
-            <li class="timing-empty mono">— אין תזמונים קרובים —</li>
+            <li class="empty">— אין תזמונים קרובים —</li>
           </ul>
-        </div>
-      </section>
-
-      <div id="manual-popover" class="manual-popover" role="dialog" aria-modal="false" aria-labelledby="manual-title" hidden>
-        <button type="button" id="manual-close" class="manual-close" aria-label="סגור עזרה">×</button>
-        <p class="kicker">מדריך קצר</p>
-        <h2 id="manual-title" class="manual-title"></h2>
-        <p id="manual-body" class="manual-body"></p>
+          <h2 id="done-title" class="queue-title queue-title-done" hidden>נשלחו לאחרונה</h2>
+          <ul id="done-list" class="timing-list done-list"></ul>
+          <p class="footnote">
+            עובד רק על המחשב הזה. התזמונים נשמרים מקומית. הטלפון יכול להיות כבוי, אבל המחשב צריך להישאר דלוק עם האפליקציה פתוחה.
+            <button type="button" class="btn-link" data-help="away">מה קורה כשהולכים לישון?</button>
+          </p>
+        </aside>
       </div>
-
-      <footer class="footnote mono">
-        עובד רק על המחשב הזה · התזמונים נשמרים מקומית · אין שליחה מיידית מהמסך הזה
-      </footer>
     </main>
+
+    <dialog id="mg-dialog" class="mg-dialog" aria-labelledby="mg-dialog-title">
+      <form id="mg-form" class="mg-form" autocomplete="off" novalidate>
+        <h2 id="mg-dialog-title" class="mg-dialog-title">מטא-קבוצה חדשה</h2>
+        <input type="text" id="metagroup-name" placeholder="שם, למשל: ועד הבית" aria-label="שם המטא-קבוצה" />
+        <div class="mg-dialog-row">
+          <input type="search" id="group-search" placeholder="חפש קבוצה…" aria-label="חפש קבוצה" />
+          <span id="draft-count" class="step-aux">0 נבחרו</span>
+        </div>
+        <div id="group-pick" class="group-pick" role="group" aria-label="קבוצות">
+          <p class="empty">טוען קבוצות…</p>
+        </div>
+        <p id="mg-error" class="form-error" role="alert" hidden></p>
+        <div class="mg-dialog-actions">
+          <button type="submit" class="submit">שמור מטא-קבוצה</button>
+          <button type="button" id="mg-cancel" class="btn-quiet">ביטול</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="help-dialog" class="help-dialog" aria-labelledby="help-title">
+      <div class="help-body">
+        <div class="help-top">
+          <h2 id="help-title" class="help-title">מדריך קצר</h2>
+          <button type="button" id="help-close" class="btn-quiet">סגור</button>
+        </div>
+
+        <section id="help-overview">
+          <h3>איך זה עובד</h3>
+          <p>בוחרים למי לשלוח, כותבים הודעה אחת או יותר, קובעים מועד ולוחצים <em>שמור תזמון</em>. בזמן שנקבע האפליקציה שולחת את ההודעות מחשבון ה-WhatsApp שלכם לכל הקבוצות שנבחרו. אין כאן שליחה מיידית: כל שליחה היא תזמון.</p>
+        </section>
+
+        <section id="help-groups">
+          <h3>מטא-קבוצות</h3>
+          <p>שולחים תמיד למטא-קבוצות. מטא-קבוצה היא רשימת קבוצות שמורה עם שם, למשל "ועד הבית" או "כל ההורים". היא יכולה להכיל גם קבוצה אחת בלבד.</p>
+          <p>כדי ליצור אחת לוחצים <em>צור מטא-קבוצה</em>, נותנים שם, מחפשים ומסמנים קבוצות ושומרים. המטא-קבוצה החדשה נבחרת מיד לתזמון.</p>
+          <p>לחיצה על מטא-קבוצה בוחרת אותה, ולחיצה נוספת מבטלת את הבחירה. אפשר לבחור כמה מטא-קבוצות יחד, וקבוצה שמופיעה בשתיהן תקבל את ההודעות פעם אחת בלבד. ה-× מוחק מטא-קבוצה; תזמונים שכבר נשמרו יישלחו כרגיל.</p>
+        </section>
+
+        <section id="help-messages">
+          <h3>הודעות וקבצים</h3>
+          <p>אפשר לשלוח עד 10 הודעות בתזמון אחד. כל קבוצה מקבלת אותן לפי הסדר, עם הפסקה קצרה ביניהן. <em>הוסף הודעה</em> מוסיף הודעה בסוף הרשימה, ו<em>הסר</em> מוחק אותה.</p>
+          <p>לכל הודעה אפשר לצרף עד 10 קבצים, עד 16MB לכל קובץ. הטקסט של ההודעה מופיע ככיתוב של הקובץ הראשון. הודעה יכולה להיות רק טקסט, רק קבצים, או שניהם. הקבצים נשמרים במחשב עד השליחה או עד ביטול התזמון.</p>
+        </section>
+
+        <section id="help-time">
+          <h3>מועד שליחה</h3>
+          <p>בוחרים תאריך ושעה בעתיד. השעה הגדולה מתחת לשדה מראה מתי בדיוק ההודעות ייצאו. השעה לפי אזור הזמן שמופיע ליד השדה.</p>
+        </section>
+
+        <section id="help-away">
+          <h3>אחרי השמירה: אפשר ללכת לישון</h3>
+          <ul>
+            <li><strong>הטלפון</strong> יכול להיות כבוי או במצב טיסה. WhatsApp שולח מהמחשב כמכשיר מקושר. צריך רק שהטלפון יתחבר לאינטרנט לפחות פעם בשבועיים, אחרת WhatsApp מנתק את המכשיר המקושר.</li>
+            <li><strong>המחשב</strong> צריך להישאר דלוק עם חלון האפליקציה פתוח. כל עוד יש תזמון שממתין, האפליקציה מונעת מהמחשב להירדם לבד, ושורה כחולה בראש המסך מציינת זאת. המסך יכול לכבות.</li>
+            <li>סגירת המכסה של מחשב נייד, בחירה ב"שינה" או כיבוי יעצרו את השליחה.</li>
+            <li>אם המחשב בכל זאת היה כבוי או רדום בזמן השליחה, ההודעות יישלחו מיד כשהאפליקציה תחזור לפעול, בתנאי שעברו עד 6 שעות. אחרי יותר מ-6 שעות התזמון יסומן <em>לא נשלח בזמן</em> ולא יישלח, כדי שהודעה לא תגיע באמצע הלילה.</li>
+          </ul>
+        </section>
+
+        <section id="help-chat">
+          <h3>תזמון מתוך WhatsApp</h3>
+          <p>אפשר לקבוע תזמון גם בלי האתר, בצ'אט "הודעה לעצמי" ב-WhatsApp (הצ'אט עם המספר שלכם):</p>
+          <ol>
+            <li>שולחים הודעה אחת עם 3 שורות: <em>תזמון</em>, הזמן (למשל <em>מחר 18:00</em> או <em>25/11 18:00</em>), ו<em>קבוצות:</em> עם שמות המטא-קבוצות, מופרדים בפסיקים.</li>
+            <li>שולחים 1-10 הודעות (טקסט, תמונה או קובץ), לפי הסדר שבו הן יישלחו.</li>
+            <li>שולחים <em>תזמון: סוף</em>. התשובה מאשרת את התזמון ונותנת לו קוד.</li>
+          </ol>
+          <p><em>תזמון: ביטול</em> מבטל באמצע. <em>רשימה</em> מציגה את המטא-קבוצות ואת התזמונים הממתינים, <em>בטל</em> ואחריו הקוד מבטל תזמון, ו<em>עזרה</em> מציגה את ההסבר. תשובות האפליקציה מתחילות ב-🤖. הודעות אחרות בצ'אט הזה לא מושפעות, ושום צ'אט אחר לא נקרא. תזמונים שנקבעו כך מופיעים גם כאן.</p>
+        </section>
+
+        <section id="help-queue">
+          <h3>תזמונים קרובים ונשלחו לאחרונה</h3>
+          <p><em>תזמונים קרובים</em> מציג מה עוד לא נשלח. <em>בטל</em> מוחק את התזמון ואת הקבצים שלו, וההודעות לא יישלחו.</p>
+          <p><em>נשלחו לאחרונה</em> מציג את 24 השעות האחרונות: <em>נשלח</em>, <em>נשלח באיחור</em> (אחרי שהמחשב חזר לפעול), <em>נכשל</em> בחלק מהקבוצות, או <em>לא נשלח בזמן</em>. <em>הסר מהרשימה</em> רק מנקה את השורה.</p>
+        </section>
+      </div>
+    </dialog>
+
+    <template id="message-template">
+      <li class="message">
+        <div class="message-head">
+          <span class="message-no"></span>
+          <button type="button" class="message-remove btn-link">הסר</button>
+        </div>
+        <textarea rows="3" placeholder="מה לשלוח בזמן שנקבע?"></textarea>
+        <div class="message-foot">
+          <label class="attach-btn">
+            <input type="file" multiple hidden />
+            צרף קבצים
+          </label>
+          <span class="char-count"></span>
+        </div>
+        <ul class="chip-list" aria-live="polite"></ul>
+      </li>
+    </template>
 
     <script src="/app.js"></script>
   </body>

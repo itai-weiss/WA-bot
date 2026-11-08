@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "groups": "node list-groups.js"
+    "groups": "node list-groups.js",
+    "test": "node test-timings.js && node test-chat.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
@@ -14,7 +15,7 @@
     "multer": "^1.4.5-lts.1",
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
-    "whatsapp-web.js": "^1.23.0"
+    "whatsapp-web.js": "https://codeload.github.com/wwebjs/whatsapp-web.js/tar.gz/064a3d5a5a3dce1281a6a12740b5a7051339d154"
   },
   "engines": {
     "node": ">=20"

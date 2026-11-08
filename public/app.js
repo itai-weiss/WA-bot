@@ -3,8 +3,8 @@ const $ = (sel) => document.querySelector(sel);
 const statusDot = $('#status-dot');
 const statusText = $('#status-text');
 const clockEl = $('#clock');
+const awakeNote = $('#awake-note');
 const qrPanel = $('#qr-panel');
-const startupKicker = $('#startup-kicker');
 const startupTitle = $('#startup-title');
 const startupNote = $('#startup-note');
 const qrSteps = $('#qr-steps');
@@ -14,36 +14,40 @@ const qrImg = $('#qr-img');
 const timingPanel = $('#timing-panel');
 const groupPick = $('#group-pick');
 const groupSearch = $('#group-search');
-const groupSearchClear = $('#group-search-clear');
 const groupCountEl = $('#group-count');
-const metagroupSelect = $('#metagroup-select');
-const applyMetagroupBtn = $('#apply-metagroup');
 const metagroupName = $('#metagroup-name');
-const saveMetagroupBtn = $('#save-metagroup');
 const metagroupList = $('#metagroup-list');
-const messageEl = $('#message');
-const charCountEl = $('#char-count');
-const filesEl = $('#files');
-const chipList = $('#chip-list');
-const attachEmpty = $('#attach-empty');
+const mgEmpty = $('#mg-empty');
+const newMgBtn = $('#new-metagroup');
+const mgDialog = $('#mg-dialog');
+const mgForm = $('#mg-form');
+const mgCancel = $('#mg-cancel');
+const mgError = $('#mg-error');
+const draftCount = $('#draft-count');
+const messageStack = $('#message-stack');
+const messageTemplate = $('#message-template');
+const messageCountEl = $('#message-count');
+const addMessageBtn = $('#add-message');
 const scheduledAtEl = $('#scheduled-at');
+const whenTime = $('#when-time');
+const whenDate = $('#when-date');
 const tzLabel = $('#tz-label');
 const form = $('#timing-form');
 const formError = $('#form-error');
 const submitBtn = $('#timing-submit');
-const submitLabel = submitBtn.querySelector('.transmit-label');
 const timingList = $('#timing-list');
-const manualPopover = $('#manual-popover');
-const manualTitle = $('#manual-title');
-const manualBody = $('#manual-body');
-const manualClose = $('#manual-close');
+const doneTitle = $('#done-title');
+const doneList = $('#done-list');
 
 let lastReady = false;
 let allGroups = [];
-let selectedIds = new Set();
+let selectedMg = new Set();
+let draftIds = new Set();
 let metagroups = [];
-let attached = [];
-const MAX_FILES = 10;
+let messages = [];
+const MAX_FILES_PER_MESSAGE = 10;
+const MAX_MESSAGES = 10;
+const DONE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 const TEXT = {
   status: {
@@ -60,39 +64,15 @@ const TEXT = {
   noGroups: (n) => `לא נמצאו קבוצות. זוהו ${n} שיחות פרטיות בלבד.`,
   groupsFailed: (m) => `שגיאה בטעינת קבוצות: ${m}`,
   noGroupMatch: 'אין תוצאות לחיפוש.',
-  noMetagroups: '— אין מטא-קבוצות שמורות —',
   charCount: (n) => `${n} תווים`,
   noTimings: '— אין תזמונים קרובים —',
   saving: 'שומר…',
   save: 'שמור תזמון',
   removeFile: 'הסר קובץ',
-};
-
-const MANUALS = {
-  overview: {
-    title: 'איך בונים תזמון',
-    body: 'בחר יעד אחד או יותר, כתוב הודעה או צרף קובץ, קבע מועד עתידי ולחץ שמור תזמון. השליחה מתבצעת אוטומטית בזמן שנקבע.',
-  },
-  targets: {
-    title: 'יעדים ומטא-קבוצות',
-    body: 'סמן קבוצות מהרשימה. אם יש שילוב שחוזר על עצמו, תן לו שם ושמור כמטא-קבוצה. בפעם הבאה בחר אותה מהרשימה כדי לסמן את כל הקבוצות יחד.',
-  },
-  message: {
-    title: 'תוכן ההודעה',
-    body: 'הטקסט יישלח לכל היעדים שנבחרו. אם צורפו קבצים, הטקסט יופיע ככיתוב של הקובץ הראשון.',
-  },
-  attachments: {
-    title: 'קבצים מצורפים',
-    body: 'אפשר לצרף עד 10 קבצים, עד 16MB לכל קובץ. הקבצים נשמרים מקומית עד מועד השליחה או עד ביטול התזמון.',
-  },
-  time: {
-    title: 'מועד שליחה',
-    body: 'בחר תאריך ושעה בעתיד. השעה מפורשת לפי אזור הזמן שמופיע ליד השדה.',
-  },
-  queue: {
-    title: 'תזמונים קרובים',
-    body: 'כאן מופיעים התזמונים שעדיין לא נשלחו. אפשר לבטל תזמון לפני מועד השליחה; ביטול מוחק גם קבצים שמורים שלו.',
-  },
+  messageCount: (n) => (n === 1 ? 'הודעה אחת' : `${n} הודעות`),
+  messageNo: (n) => `הודעה ${n}`,
+  awake: (time) =>
+    `המחשב יישאר ער עד השליחה הבאה (${time}). אפשר לכבות את המסך, אבל לא לסגור את המכסה או לכבות את המחשב.`,
 };
 
 function pad(n) {
@@ -101,7 +81,20 @@ function pad(n) {
 
 function tickClock() {
   const d = new Date();
-  clockEl.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  clockEl.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatTime(date) {
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function formatDay(date) {
+  const today = new Date();
+  const tomorrow = new Date(Date.now() + 86400000);
+  const same = (a, b) => a.toDateString() === b.toDateString();
+  if (same(date, today)) return 'היום';
+  if (same(date, tomorrow)) return 'מחר';
+  return date.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
 function setStatus(kind, label) {
@@ -111,75 +104,64 @@ function setStatus(kind, label) {
 
 function startupView(data) {
   if (data.error?.message) {
-    return {
-      kicker: 'נדרשת פעולה',
-      title: 'החיבור ל-WhatsApp נעצר.',
-      note: data.error.message,
-      showSteps: false,
-      showQr: false,
-    };
+    return { title: 'החיבור ל-WhatsApp נעצר.', note: data.error.message, showSteps: false, showQr: false };
   }
 
   switch (data.phase) {
     case 'awaiting_scan':
       return {
-        kicker: 'חיבור WhatsApp',
         title: 'סרוק את קוד ה-QR.',
         note: 'צריך לחבר את החשבון מהטלפון לפני שניתן להפעיל תזמונים.',
         showSteps: true,
         showQr: Boolean(data.qr),
       };
     case 'loading':
-      return {
-        kicker: 'טוען את WhatsApp',
-        title: 'החיבור נבנה עכשיו.',
-        note: 'המערכת פותחת את WhatsApp Web ומחכה שייטען לגמרי.',
-        showSteps: false,
-        showQr: false,
-      };
+      return { title: 'החיבור נבנה עכשיו.', note: 'המערכת פותחת את WhatsApp Web ומחכה שייטען לגמרי.' };
     case 'syncing':
-      return {
-        kicker: 'מסנכרן שיחות',
-        title: 'עוד רגע אפשר לתזמן.',
-        note: 'החשבון כבר מחובר. עכשיו נטענות הקבוצות למערכת.',
-        showSteps: false,
-        showQr: false,
-      };
+      return { title: 'עוד רגע אפשר לתזמן.', note: 'החשבון כבר מחובר. עכשיו נטענות הקבוצות למערכת.' };
     case 'offline':
-      return {
-        kicker: 'השרת לא זמין',
-        title: 'לא הצלחנו להגיע לאפליקציה.',
-        note: TEXT.serverOffline,
-        showSteps: false,
-        showQr: false,
-      };
+      return { title: 'לא הצלחנו להגיע לאפליקציה.', note: TEXT.serverOffline };
     default:
-      return {
-        kicker: 'מכין את החיבור',
-        title: 'מפעיל את WhatsApp Web.',
-        note: 'בדרך כלל זה לוקח כמה שניות.',
-        showSteps: false,
-        showQr: false,
-      };
+      return { title: 'מפעיל את WhatsApp Web.', note: 'בדרך כלל זה לוקח כמה שניות.' };
   }
 }
 
 function updateStartupPanel(data) {
   const view = startupView(data);
-  startupKicker.textContent = view.kicker;
   startupTitle.textContent = view.title;
   startupNote.textContent = view.note;
-  startupNote.hidden = !view.note;
   qrSteps.hidden = !view.showSteps;
   qrFrame.hidden = !view.showQr;
   if (view.showQr && data.qr && qrImg.src !== data.qr) qrImg.src = data.qr;
   if (!view.showQr) qrImg.removeAttribute('src');
 }
 
+function updateAwakeNote(data) {
+  if (!data.ready || !data.keepAwake || !data.nextAt) {
+    awakeNote.hidden = true;
+    return;
+  }
+  const next = new Date(data.nextAt);
+  awakeNote.textContent = TEXT.awake(`${formatDay(next)} ${formatTime(next)}`);
+  awakeNote.hidden = false;
+}
+
 function setDefaultScheduleTime() {
   const d = new Date(Date.now() + 10 * 60 * 1000);
   d.setSeconds(0, 0);
   scheduledAtEl.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  renderWhen();
+}
+
+function renderWhen() {
+  const d = scheduledAtEl.value ? new Date(scheduledAtEl.value) : null;
+  if (!d || Number.isNaN(d.getTime())) {
+    whenTime.textContent = '--:--';
+    whenDate.textContent = 'בחרו תאריך ושעה';
+    return;
+  }
+  whenTime.textContent = formatTime(d);
+  whenDate.textContent = formatDay(d);
 }
 
 async function poll() {
@@ -187,6 +169,7 @@ async function poll() {
     const res = await fetch('/api/status');
     const data = await res.json();
     tzLabel.textContent = data.tz || 'Asia/Jerusalem';
+    updateAwakeNote(data);
 
     if (data.ready) {
       setStatus('ready', TEXT.status.ready);
@@ -211,13 +194,23 @@ async function poll() {
     lastReady = false;
     timingPanel.hidden = true;
     qrPanel.hidden = false;
+    awakeNote.hidden = true;
     setStatus('error', TEXT.status.offline);
     updateStartupPanel({ phase: 'offline', error: { message: TEXT.serverOffline } });
   }
 }
 
+/* ── Groups (only inside the "new metagroup" dialog) ── */
+
+function emptyLine(text) {
+  const p = document.createElement('p');
+  p.className = 'empty';
+  p.textContent = text;
+  return p;
+}
+
 async function loadGroups() {
-  groupPick.innerHTML = `<div class="group-pick-empty mono">${TEXT.loadingGroups}</div>`;
+  groupPick.replaceChildren(emptyLine(TEXT.loadingGroups));
 
   try {
     const res = await fetch('/api/groups');
@@ -226,52 +219,52 @@ async function loadGroups() {
 
     allGroups = payload.groups || [];
     if (!allGroups.length) {
-      groupPick.innerHTML = `<div class="group-pick-empty mono">${TEXT.noGroups(payload.totalChats || 0)}</div>`;
+      groupPick.replaceChildren(emptyLine(TEXT.noGroups(payload.totalChats || 0)));
       return;
     }
     renderGroupPick();
+    renderMetagroups();
   } catch (err) {
-    groupPick.innerHTML = `<div class="group-pick-empty mono">${TEXT.groupsFailed(err.message)}</div>`;
+    groupPick.replaceChildren(emptyLine(TEXT.groupsFailed(err.message)));
   }
 }
 
-function renderGroupPick(filter) {
-  const q = (filter || groupSearch.value || '').trim().toLowerCase();
+function renderGroupPick() {
+  if (!allGroups.length) return;
+  const q = groupSearch.value.trim().toLowerCase();
   const visible = q ? allGroups.filter((group) => group.name.toLowerCase().includes(q)) : allGroups;
 
-  groupPick.innerHTML = '';
-
   if (!visible.length) {
-    groupPick.innerHTML = `<div class="group-pick-nomatch mono">${TEXT.noGroupMatch}</div>`;
+    groupPick.replaceChildren(emptyLine(TEXT.noGroupMatch));
     return;
   }
 
+  const frag = document.createDocumentFragment();
   for (const group of visible) {
     const label = document.createElement('label');
+    label.className = 'group';
     const cb = document.createElement('input');
-    const nameSpan = document.createElement('span');
-
     cb.type = 'checkbox';
     cb.value = group.id;
-    cb.checked = selectedIds.has(group.id);
+    cb.checked = draftIds.has(group.id);
     cb.addEventListener('change', () => {
-      if (cb.checked) selectedIds.add(group.id);
-      else selectedIds.delete(group.id);
-      updateGroupCount();
+      if (cb.checked) draftIds.add(group.id);
+      else draftIds.delete(group.id);
+      updateDraftCount();
     });
-
-    nameSpan.textContent = group.name;
-    label.appendChild(cb);
-    label.appendChild(nameSpan);
-    groupPick.appendChild(label);
+    const name = document.createElement('span');
+    name.textContent = group.name;
+    label.append(cb, name);
+    frag.appendChild(label);
   }
-
-  updateGroupCount();
+  groupPick.replaceChildren(frag);
 }
 
-function updateGroupCount() {
-  groupCountEl.textContent = `${selectedIds.size} נבחרו`;
+function updateDraftCount() {
+  draftCount.textContent = `${draftIds.size} נבחרו`;
 }
+
+/* ── Metagroups: the only way to pick recipients ── */
 
 async function loadMetagroups() {
   try {
@@ -283,84 +276,114 @@ async function loadMetagroups() {
   } catch (_) {}
 }
 
-function renderMetagroups() {
-  metagroupSelect.innerHTML = '<option value="">בחר מטא-קבוצה…</option>';
-  metagroupList.innerHTML = '';
-
-  if (!metagroups.length) {
-    metagroupList.innerHTML = `<li class="metagroup-empty mono">${TEXT.noMetagroups}</li>`;
-    return;
-  }
-
-  for (const metagroup of metagroups) {
-    const opt = document.createElement('option');
-    opt.value = metagroup.id;
-    opt.textContent = `${metagroup.name} (${metagroup.groupIds.length})`;
-    metagroupSelect.appendChild(opt);
-
-    const names = metagroup.groupIds.map((id) => (allGroups.find((group) => group.id === id) || {}).name || id);
-    const li = document.createElement('li');
-    li.className = 'metagroup-item';
-    li.innerHTML = `
-      <div class="metagroup-item-head">
-        <span class="metagroup-item-name"></span>
-        <span class="metagroup-item-count mono"></span>
-      </div>
-      <div class="metagroup-item-groups mono"></div>
-      <div class="metagroup-item-actions">
-        <button type="button" class="metagroup-apply-btn ghost-btn mono">בחר</button>
-        <button type="button" class="metagroup-delete-btn ghost-btn mono delete">מחק</button>
-      </div>
-    `;
-    li.querySelector('.metagroup-item-name').textContent = metagroup.name;
-    li.querySelector('.metagroup-item-count').textContent = `${metagroup.groupIds.length} קבוצות`;
-    li.querySelector('.metagroup-item-groups').textContent = names.join(' · ');
-    li.querySelector('.metagroup-apply-btn').addEventListener('click', () => applyMetagroup(metagroup.id));
-    li.querySelector('.metagroup-delete-btn').addEventListener('click', () => deleteMetagroup(metagroup.id));
-    metagroupList.appendChild(li);
-  }
+function groupName(id) {
+  return (allGroups.find((group) => group.id === id) || {}).name || id;
 }
 
-function applyMetagroup(id) {
-  const metagroup = metagroups.find((item) => item.id === id);
-  if (!metagroup) return;
-  selectedIds = new Set(metagroup.groupIds);
-  metagroupSelect.value = id;
-  renderGroupPick();
-  updateGroupCount();
+function targetGroupIds() {
+  const ids = new Set();
+  for (const metagroup of metagroups) {
+    if (selectedMg.has(metagroup.id)) metagroup.groupIds.forEach((id) => ids.add(id));
+  }
+  return ids;
+}
+
+function updateTargetCount() {
+  const groups = targetGroupIds().size;
+  const groupsText = groups === 1 ? 'קבוצה אחת' : `${groups} קבוצות`;
+  const mgText = selectedMg.size === 1 ? 'מטא-קבוצה אחת' : `${selectedMg.size} מטא-קבוצות`;
+  groupCountEl.textContent = selectedMg.size ? `${mgText} (${groupsText})` : 'לא נבחרה מטא-קבוצה';
+  groupCountEl.classList.toggle('on', selectedMg.size > 0);
+}
+
+function renderMetagroups() {
+  // Drop selections whose metagroup was deleted.
+  selectedMg = new Set([...selectedMg].filter((id) => metagroups.some((m) => m.id === id)));
+  metagroupList.replaceChildren();
+  mgEmpty.hidden = metagroups.length > 0;
+
+  for (const metagroup of metagroups) {
+    const li = document.createElement('li');
+    li.className = 'mg';
+    const pick = document.createElement('button');
+    pick.type = 'button';
+    pick.className = 'mg-apply';
+    pick.setAttribute('aria-pressed', String(selectedMg.has(metagroup.id)));
+    pick.title = metagroup.groupIds.map(groupName).join(', ');
+    pick.textContent = metagroup.name;
+    const count = document.createElement('span');
+    count.className = 'mg-count';
+    count.textContent = metagroup.groupIds.length;
+    pick.appendChild(count);
+    pick.addEventListener('click', () => {
+      if (selectedMg.has(metagroup.id)) selectedMg.delete(metagroup.id);
+      else selectedMg.add(metagroup.id);
+      renderMetagroups();
+    });
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'mg-delete';
+    del.setAttribute('aria-label', `מחק את ${metagroup.name}`);
+    del.textContent = '×';
+    del.addEventListener('click', () => deleteMetagroup(metagroup.id));
+
+    li.append(pick, del);
+    metagroupList.appendChild(li);
+  }
+  updateTargetCount();
 }
 
 async function deleteMetagroup(id) {
+  const metagroup = metagroups.find((item) => item.id === id);
+  if (metagroup && !confirm(`למחוק את המטא-קבוצה "${metagroup.name}"? הקבוצות עצמן לא יימחקו, ותזמונים שכבר נשמרו יישלחו כרגיל.`)) return;
   try {
     await fetch(`/api/metagroups/${id}`, { method: 'DELETE' });
     metagroups = metagroups.filter((item) => item.id !== id);
-    if (metagroupSelect.value === id) metagroupSelect.value = '';
     renderMetagroups();
   } catch (_) {}
 }
 
-async function saveMetagroup() {
+function openMetagroupDialog() {
+  draftIds = new Set();
+  metagroupName.value = '';
+  groupSearch.value = '';
+  showMgError('');
+  updateDraftCount();
+  renderGroupPick();
+  mgDialog.showModal();
+  metagroupName.focus();
+}
+
+function showMgError(message) {
+  mgError.textContent = message;
+  mgError.hidden = !message;
+}
+
+async function saveMetagroup(ev) {
+  ev.preventDefault();
   const name = metagroupName.value.trim();
-  if (!name) return showError('כתוב שם למטא-קבוצה.');
-  if (!selectedIds.size) return showError('בחר לפחות קבוצה אחת לפני שמירה.');
+  if (!name) return showMgError('כתוב שם למטא-קבוצה.');
+  if (!draftIds.size) return showMgError('בחר לפחות קבוצה אחת לפני שמירה.');
 
   try {
     const res = await fetch('/api/metagroups', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, groupIds: [...selectedIds] }),
+      body: JSON.stringify({ name, groupIds: [...draftIds] }),
     });
     const payload = await res.json();
     if (!res.ok) throw new Error(payload.error || res.statusText);
     metagroups.push(payload);
-    metagroupName.value = '';
-    showError('');
+    selectedMg.add(payload.id);
     renderMetagroups();
-    metagroupSelect.value = payload.id;
+    mgDialog.close();
   } catch (err) {
-    showError(err.message);
+    showMgError(err.message);
   }
 }
+
+/* ── Messages ── */
 
 function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -368,84 +391,161 @@ function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function renderChips() {
-  chipList.innerHTML = '';
-  attachEmpty.style.display = attached.length ? 'none' : '';
-
-  attached.forEach((file, index) => {
-    const li = document.createElement('li');
-    li.className = 'chip';
-    li.innerHTML = `
-      <span class="chip-name"></span>
-      <span class="chip-size"></span>
-      <button type="button" class="chip-x" aria-label="${TEXT.removeFile}">×</button>
-    `;
-    li.querySelector('.chip-name').textContent = file.name;
-    li.querySelector('.chip-size').textContent = formatBytes(file.size);
-    li.querySelector('.chip-x').addEventListener('click', () => {
-      attached.splice(index, 1);
-      renderChips();
-    });
-    chipList.appendChild(li);
-  });
+function addMessage(focus = false) {
+  if (messages.length >= MAX_MESSAGES) return;
+  messages.push({ text: '', files: [] });
+  renderMessages();
+  if (focus) messageStack.lastElementChild.querySelector('textarea').focus();
 }
+
+function renderMessages() {
+  messageStack.replaceChildren();
+  messages.forEach((message, index) => {
+    const node = messageTemplate.content.firstElementChild.cloneNode(true);
+    const textarea = node.querySelector('textarea');
+    const charCount = node.querySelector('.char-count');
+    const fileInput = node.querySelector('input[type=file]');
+    const chips = node.querySelector('.chip-list');
+    const remove = node.querySelector('.message-remove');
+
+    node.querySelector('.message-no').textContent = TEXT.messageNo(index + 1);
+    textarea.value = message.text;
+    textarea.setAttribute('aria-label', TEXT.messageNo(index + 1));
+    charCount.textContent = TEXT.charCount(message.text.length);
+    textarea.addEventListener('input', () => {
+      message.text = textarea.value;
+      charCount.textContent = TEXT.charCount(textarea.value.length);
+    });
+
+    remove.hidden = messages.length === 1;
+    remove.addEventListener('click', () => {
+      messages.splice(index, 1);
+      renderMessages();
+    });
+
+    fileInput.addEventListener('change', () => {
+      for (const file of fileInput.files) {
+        if (message.files.length >= MAX_FILES_PER_MESSAGE) break;
+        message.files.push(file);
+      }
+      renderMessages();
+    });
+
+    message.files.forEach((file, fileIndex) => {
+      const li = document.createElement('li');
+      li.className = 'chip';
+      const name = document.createElement('span');
+      name.className = 'chip-name';
+      name.textContent = file.name;
+      const size = document.createElement('span');
+      size.className = 'chip-size';
+      size.textContent = formatBytes(file.size);
+      const x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'chip-x';
+      x.setAttribute('aria-label', `${TEXT.removeFile} ${file.name}`);
+      x.textContent = '×';
+      x.addEventListener('click', () => {
+        message.files.splice(fileIndex, 1);
+        renderMessages();
+      });
+      li.append(name, size, x);
+      chips.appendChild(li);
+    });
+
+    messageStack.appendChild(node);
+  });
+
+  messageCountEl.textContent = TEXT.messageCount(messages.length);
+  addMessageBtn.hidden = messages.length >= MAX_MESSAGES;
+}
+
+/* ── Queue ── */
 
 async function loadTimings() {
   try {
     const res = await fetch('/api/timings');
     const items = await res.json();
     if (!res.ok) throw new Error(items.error || res.statusText);
-    renderTimings(items.filter((item) => !item.firedAt && item.enabled));
+    renderTimings(items);
   } catch (err) {
-    timingList.innerHTML = `<li class="timing-empty mono">${err.message}</li>`;
+    timingList.replaceChildren(emptyLine(err.message));
   }
 }
 
+function messageSummary(timing) {
+  const first = timing.messages.find((m) => m.text) || timing.messages[0];
+  const files = timing.messages.reduce((n, m) => n + (m.attachments || []).length, 0);
+  const parts = [TEXT.messageCount(timing.messages.length)];
+  if (files) parts.push(files === 1 ? 'קובץ אחד' : `${files} קבצים`);
+  return { preview: first?.text || '', meta: parts.join(', ') };
+}
+
+function timingItem(timing, kind) {
+  const when = new Date(timing.scheduledAt);
+  const li = document.createElement('li');
+  li.className = `timing ${kind}`;
+
+  const head = document.createElement('div');
+  head.className = 'timing-head';
+  const time = document.createElement('span');
+  time.className = 'timing-time';
+  time.textContent = formatTime(when);
+  const day = document.createElement('span');
+  day.className = 'timing-day';
+  day.textContent = formatDay(when);
+  head.append(time, day);
+
+  if (kind !== 'pending') {
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    const failed = timing.failedGroups || [];
+    if (kind === 'missed') tag.textContent = 'לא נשלח בזמן';
+    else if (failed.length) tag.textContent = failed.length === 1 ? 'נכשל בקבוצה אחת' : `נכשל ב-${failed.length} קבוצות`;
+    else tag.textContent = timing.lastTrigger === 'late' ? 'נשלח באיחור' : 'נשלח';
+    tag.classList.add(kind === 'missed' || failed.length ? 'bad' : 'good');
+    head.appendChild(tag);
+  }
+
+  const groups = document.createElement('p');
+  groups.className = 'timing-groups';
+  groups.textContent = (timing.metagroupNames?.length ? timing.metagroupNames : timing.groupNames || timing.groupIds).join(', ');
+
+  const { preview, meta } = messageSummary(timing);
+  const text = document.createElement('p');
+  text.className = 'timing-text';
+  text.textContent = preview;
+  text.hidden = !preview;
+
+  const foot = document.createElement('div');
+  foot.className = 'timing-foot';
+  const metaEl = document.createElement('span');
+  metaEl.textContent = `${timing.groupIds.length === 1 ? 'קבוצה אחת' : `${timing.groupIds.length} קבוצות`}, ${meta}`;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn-link';
+  btn.textContent = kind === 'pending' ? 'בטל' : 'הסר מהרשימה';
+  btn.addEventListener('click', async () => {
+    if (kind === 'pending' && !confirm('לבטל את התזמון? ההודעות לא יישלחו.')) return;
+    await fetch(`/api/timings/${timing.id}`, { method: 'DELETE' });
+    loadTimings();
+  });
+  foot.append(metaEl, btn);
+
+  li.append(head, groups, text, foot);
+  return li;
+}
+
 function renderTimings(items) {
-  timingList.innerHTML = '';
+  const byTime = (a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt);
+  const pending = items.filter((t) => t.enabled && !t.firedAt && !t.missedAt).sort(byTime);
+  const done = items
+    .filter((t) => t.missedAt || (t.firedAt && Date.now() - new Date(t.firedAt) < DONE_WINDOW_MS))
+    .sort((a, b) => byTime(b, a));
 
-  if (!items.length) {
-    timingList.innerHTML = `<li class="timing-empty mono">${TEXT.noTimings}</li>`;
-    return;
-  }
-
-  const sorted = items.sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
-
-  for (const timing of sorted) {
-    const when = new Date(timing.scheduledAt).toLocaleString('he-IL', {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    });
-
-    const li = document.createElement('li');
-    li.className = 'timing-item';
-    li.innerHTML = `
-      <div class="timing-item-head">
-        <span class="timing-item-name"></span>
-        <span class="timing-item-count mono"></span>
-      </div>
-      <div class="timing-item-groups mono"></div>
-      <div class="timing-item-files mono"></div>
-      <p class="timing-message"></p>
-      <div class="timing-item-actions">
-        <button type="button" class="timing-delete-btn ghost-btn mono delete">בטל</button>
-      </div>
-    `;
-
-    li.querySelector('.timing-item-name').textContent = when;
-    li.querySelector('.timing-item-count').textContent = `${timing.groupIds.length} קבוצות`;
-    li.querySelector('.timing-item-groups').textContent = (timing.groupNames || timing.groupIds).join(' · ');
-    li.querySelector('.timing-item-files').textContent = (timing.attachments || []).length
-      ? (timing.attachments || []).map((file) => file.originalName).join(' · ')
-      : 'ללא קבצים מצורפים';
-    li.querySelector('.timing-message').textContent = timing.message;
-    li.querySelector('.timing-delete-btn').addEventListener('click', async () => {
-      await fetch(`/api/timings/${timing.id}`, { method: 'DELETE' });
-      loadTimings();
-    });
-
-    timingList.appendChild(li);
-  }
+  timingList.replaceChildren(...(pending.length ? pending.map((t) => timingItem(t, 'pending')) : [emptyLine(TEXT.noTimings)]));
+  doneTitle.hidden = !done.length;
+  doneList.replaceChildren(...done.map((t) => timingItem(t, t.missedAt ? 'missed' : 'sent')));
 }
 
 function showError(message) {
@@ -453,96 +553,68 @@ function showError(message) {
   formError.hidden = !message;
 }
 
-function openManual(key) {
-  const manual = MANUALS[key];
-  if (!manual) return;
-  manualTitle.textContent = manual.title;
-  manualBody.textContent = manual.body;
-  manualPopover.hidden = false;
-}
-
-function closeManual() {
-  manualPopover.hidden = true;
-}
-
 form.addEventListener('submit', async (ev) => {
   ev.preventDefault();
   showError('');
 
-  const groupIds = [...selectedIds];
-  const message = messageEl.value.trim();
+  const metagroupIds = [...selectedMg];
   const scheduledAt = scheduledAtEl.value ? new Date(scheduledAtEl.value).toISOString() : '';
+  const emptyIndex = messages.findIndex((m) => !m.text.trim() && !m.files.length);
 
-  if (!groupIds.length) return showError('בחר לפחות קבוצה אחת.');
-  if (!message && attached.length === 0) return showError('כתוב הודעה או צרף לפחות קובץ אחד.');
+  if (!metagroupIds.length) return showError('בחר לפחות מטא-קבוצה אחת.');
+  if (emptyIndex !== -1) return showError(`${TEXT.messageNo(emptyIndex + 1)} ריקה. כתוב הודעה או צרף לפחות קובץ אחד.`);
   if (!scheduledAt || Number.isNaN(new Date(scheduledAt).getTime())) return showError('בחר מועד שליחה תקין.');
   if (new Date(scheduledAt).getTime() <= Date.now()) return showError('מועד השליחה חייב להיות בעתיד.');
 
   submitBtn.disabled = true;
-  submitLabel.textContent = TEXT.saving;
+  submitBtn.textContent = TEXT.saving;
 
   try {
     const fd = new FormData();
-    for (const id of groupIds) fd.append('groupIds', id);
-    fd.append('message', message);
+    for (const id of metagroupIds) fd.append('metagroupIds', id);
     fd.append('scheduledAt', scheduledAt);
-    for (const file of attached) fd.append('files', file);
+    fd.append('messages', JSON.stringify(messages.map((m) => ({ text: m.text.trim() }))));
+    messages.forEach((m, i) => m.files.forEach((file) => fd.append(`files_${i}`, file)));
 
-    const res = await fetch('/api/timings', {
-      method: 'POST',
-      body: fd,
-    });
+    const res = await fetch('/api/timings', { method: 'POST', body: fd });
     const payload = await res.json();
     if (!res.ok) throw new Error(payload.error || res.statusText);
 
-    messageEl.value = '';
-    charCountEl.textContent = TEXT.charCount(0);
-    attached = [];
-    renderChips();
+    messages = [];
+    addMessage();
     setDefaultScheduleTime();
     await loadTimings();
+    poll();
   } catch (err) {
     showError(err.message);
   } finally {
     submitBtn.disabled = false;
-    submitLabel.textContent = TEXT.save;
+    submitBtn.textContent = TEXT.save;
   }
 });
 
-groupSearch.addEventListener('input', () => renderGroupPick(groupSearch.value));
-groupSearchClear.addEventListener('click', () => {
-  groupSearch.value = '';
-  renderGroupPick();
+groupSearch.addEventListener('input', renderGroupPick);
+newMgBtn.addEventListener('click', openMetagroupDialog);
+mgForm.addEventListener('submit', saveMetagroup);
+mgCancel.addEventListener('click', () => mgDialog.close());
+addMessageBtn.addEventListener('click', () => addMessage(true));
+
+const helpDialog = $('#help-dialog');
+document.querySelectorAll('[data-help]').forEach((button) => {
+  button.addEventListener('click', () => {
+    helpDialog.showModal();
+    $(`#help-${button.dataset.help}`).scrollIntoView({ block: 'start' });
+  });
 });
-metagroupSelect.addEventListener('change', () => {
-  if (metagroupSelect.value) applyMetagroup(metagroupSelect.value);
+$('#help-close').addEventListener('click', () => helpDialog.close());
+helpDialog.addEventListener('click', (ev) => {
+  if (ev.target === helpDialog) helpDialog.close();
 });
-applyMetagroupBtn.addEventListener('click', () => {
-  if (metagroupSelect.value) applyMetagroup(metagroupSelect.value);
-});
-saveMetagroupBtn.addEventListener('click', saveMetagroup);
-document.querySelectorAll('.manual-btn').forEach((button) => {
-  button.addEventListener('click', () => openManual(button.dataset.manual));
-});
-manualClose.addEventListener('click', closeManual);
-document.addEventListener('keydown', (ev) => {
-  if (ev.key === 'Escape') closeManual();
-});
-messageEl.addEventListener('input', () => {
-  charCountEl.textContent = TEXT.charCount(messageEl.value.length);
-});
-filesEl.addEventListener('change', (ev) => {
-  for (const file of ev.target.files) {
-    if (attached.length >= MAX_FILES) break;
-    attached.push(file);
-  }
-  ev.target.value = '';
-  renderChips();
-});
+scheduledAtEl.addEventListener('input', renderWhen);
 
 tickClock();
 setInterval(tickClock, 1000);
 poll();
 setInterval(poll, 2000);
-charCountEl.textContent = TEXT.charCount(0);
-renderChips();
+setInterval(() => lastReady && loadTimings(), 30000);
+addMessage();

@@ -30,3 +30,6 @@ Thumbs.db
 WA-bot-for-friend/
 *.zip
 .claude/
+
+# Server deployment data (sessions, timings per user)
+deploy/data/

@@ -2,7 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const METAGROUPS_PATH = path.join(__dirname, 'metagroups.json');
+const DATA_DIR = require('./dataDir');
+
+const METAGROUPS_PATH = path.join(DATA_DIR, 'metagroups.json');
 
 let metagroups = [];
 
