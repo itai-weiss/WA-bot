@@ -7,7 +7,7 @@ const os = require('os');
 const path = require('path');
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wa-timings-'));
-for (const f of ['timings.js', 'eventLog.js']) fs.copyFileSync(path.join(__dirname, f), path.join(dir, f));
+for (const f of ['timings.js', 'eventLog.js', 'dataDir.js']) fs.copyFileSync(path.join(__dirname, f), path.join(dir, f));
 fs.writeFileSync(path.join(dir, 'keepAwake.js'), 'let on=false; module.exports={set:(v)=>{on=v},active:()=>on};');
 module.paths.unshift(path.join(__dirname, 'node_modules'));
 process.env.NODE_PATH = path.join(__dirname, 'node_modules');

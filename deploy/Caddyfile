@@ -1,0 +1,10 @@
+# <name>.{$SERVER_HOST} -> that user's container. Caddy gets the HTTPS
+# certificates from Let's Encrypt automatically.
+
+itai.{$SERVER_HOST} {
+	reverse_proxy wa-itai:3000
+}
+
+friend.{$SERVER_HOST} {
+	reverse_proxy wa-friend:3000
+}

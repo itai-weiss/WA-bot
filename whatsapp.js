@@ -2,6 +2,8 @@ const fs = require('fs');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcodeTerminal = require('qrcode-terminal');
 const QRCode = require('qrcode');
+const path = require('path');
+const DATA_DIR = require('./dataDir');
 
 const state = {
   ready: false,
@@ -50,11 +52,21 @@ function findBrowserPath() {
     local && `${local}\\Google\\Chrome\\Application\\chrome.exe`,
     'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
     'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
   ].filter(Boolean);
 
   for (const p of candidates) {
     if (fs.existsSync(p)) return p;
   }
+
+  // Puppeteer's own Chrome (installed in the Docker image). Preferred over distro
+  // Chromium there: upstream reports the session-restore 'ready' hang is worse with it.
+  try {
+    const bundled = require('puppeteer').executablePath();
+    if (bundled && fs.existsSync(bundled)) return bundled;
+  } catch (_) {}
   return null;
 }
 
@@ -77,13 +89,15 @@ function createClient() {
   console.log(`Using browser: ${executablePath}`);
 
   const client = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({ dataPath: path.join(DATA_DIR, '.wwebjs_auth') }),
+    webVersionCache: { type: 'local', path: path.join(DATA_DIR, '.wwebjs_cache') },
     puppeteer: {
       headless: true,
       executablePath,
       // getChats() on large accounts during first sync can exceed the 180s default.
       protocolTimeout: 600000,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      // --disable-dev-shm-usage: Docker's default /dev/shm is too small for Chrome.
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     },
   });
 

@@ -5,9 +5,10 @@ const { MessageMedia } = require('whatsapp-web.js');
 
 const eventLog = require('./eventLog');
 const keepAwake = require('./keepAwake');
+const DATA_DIR = require('./dataDir');
 
-const TIMINGS_PATH = path.join(__dirname, 'timings.json');
-const ATTACHMENTS_DIR = path.join(__dirname, 'timing-attachments');
+const TIMINGS_PATH = path.join(DATA_DIR, 'timings.json');
+const ATTACHMENTS_DIR = path.join(DATA_DIR, 'timing-attachments');
 const INTER_SEND_DELAY_MS = 1500;
 const CHECK_INTERVAL_MS = 15 * 1000;
 // A timing found overdue (PC was off/asleep, app closed) is still sent if it is

@@ -44,6 +44,10 @@ Timings are stored locally in `timings.json`.
 - If the PC was asleep or the app closed at send time, the timing is sent as soon as the app is running again, if it is at most 6 hours late. Older ones are shown as missed instead.
 - The phone can be off: WhatsApp linked devices work without it (for up to about 14 days).
 
+## Cloud server
+
+To send while your PC is off, run it on a small VPS with Docker: see [DEPLOY.md](DEPLOY.md). There, `DATA_DIR` points timings, metagroups, attachments and the WhatsApp session at a volume, and `APP_PASSWORD` puts a password on the UI.
+
 ## Test
 
 ```powershell
@@ -54,6 +58,6 @@ Runs `test-timings.js` against a temp copy with a fake WhatsApp client; nothing 
 
 ## Notes
 
-- The admin UI binds to `127.0.0.1` by default and has no authentication. Do not expose it publicly without adding auth.
+- The admin UI binds to `127.0.0.1` by default and has no authentication unless `APP_PASSWORD` is set (HTTP Basic auth, any username). The server refuses to listen on any other `HOST` without it.
 - This drives your personal WhatsApp account via WhatsApp Web. It is suitable for personal/light use, not commercial bulk sending.
 - The phone does not need to stay online; WhatsApp logs out linked devices after about 14 days without the phone connecting.

@@ -15,6 +15,8 @@ Main entry points:
 - `test-timings.js` - self-check for `timings.js` (`npm test`), uses a fake client and a temp dir.
 - `metagroups.js` - saved group bundles persisted in `metagroups.json`.
 - `eventLog.js` - in-memory recent send log.
+- `dataDir.js` - resolves `DATA_DIR` (default: the app folder), where timings, metagroups, attachments and the WhatsApp session/cache live.
+- `Dockerfile`, `deploy/` (compose + Caddy), `DEPLOY.md` - VPS deployment, one container per WhatsApp user.
 - `public/index.html`, `public/app.js`, `public/styles.css` - admin UI.
 - `list-groups.js` - terminal helper for printing WhatsApp group IDs.
 - `HOW_TO_USE.txt` / `HOW_TO_USE_HE.txt` - end-user guides (English / Hebrew); the in-app Hebrew guide is the `#help-dialog` in `public/index.html`. Keep all three in sync when behavior changes.
@@ -32,8 +34,10 @@ Main entry points:
 
 - The server binds to `HOST` and `PORT` from `.env`, defaulting to `127.0.0.1:3000`.
 - If the configured port is busy, `server.js` tries the next ports up to 10 attempts.
-- WhatsApp authentication is stored by `whatsapp-web.js` under `.wwebjs_auth/`.
-- WhatsApp cache is stored under `.wwebjs_cache/`.
+- WhatsApp authentication is stored by `whatsapp-web.js` under `<DATA_DIR>/.wwebjs_auth/`, cache under `<DATA_DIR>/.wwebjs_cache/`. On the server, user data is in `deploy/data/<name>/`.
+- If `APP_PASSWORD` is set, every route needs HTTP Basic auth (any username). The server exits at startup if `HOST` is not loopback and `APP_PASSWORD` is empty.
+- If `ready` hasn't fired 3 min after `authenticated` (upstream session-restore hang), `server.js` destroys and re-initializes the client.
+- Browser lookup: `CHROME_PATH`, then Windows Chrome/Edge and Linux Chrome/Chromium paths, then Puppeteer's bundled Chrome (used in Docker).
 - The only user-facing send workflow is creating and canceling future timings.
 - Metagroups are the only way to choose timing recipients. The server resolves `metagroupIds` to group IDs when the timing is saved, so deleting a metagroup does not change saved timings.
 - Attachments are allowed only as part of a saved timing; there is no immediate-send UI.
@@ -44,7 +48,9 @@ Main entry points:
 - Do not delete or reset `.wwebjs_auth/` unless the user explicitly asks to re-authenticate WhatsApp.
 - Do not run actions that send WhatsApp messages unless the user explicitly asks or the task requires a local manual verification they approved.
 - Treat `timings.json`, `metagroups.json`, and `timing-attachments/` as user data. Avoid overwriting them except through the app behavior or an explicit user request.
-- The admin UI has no authentication and is intended for localhost only. Do not expose it publicly without adding auth.
+- Without `APP_PASSWORD` the admin UI has no authentication and is for localhost only. Never expose it without `APP_PASSWORD`.
+- Do not delete `deploy/data/` on a server; it holds every user's session and timings.
+- Do not link the user's WhatsApp in a local container without asking: it adds a linked device.
 - Be careful with `npm run groups`; it starts a WhatsApp Web client and may require QR authentication.
 
 ## Code Style
@@ -61,6 +67,7 @@ For small JS-only edits, at minimum run:
 
 ```powershell
 node --check server.js
+node --check dataDir.js
 node --check whatsapp.js
 node --check timings.js
 node --check metagroups.js

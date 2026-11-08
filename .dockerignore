@@ -1,0 +1,14 @@
+node_modules
+.wwebjs_auth
+.wwebjs_cache
+timings.json
+metagroups.json
+timing-attachments
+.env
+.env.*
+WA-bot-for-friend*
+*.zip
+.claude
+.git
+deploy
+data

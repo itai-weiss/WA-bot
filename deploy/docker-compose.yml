@@ -1,0 +1,48 @@
+# One wa-<name> service per WhatsApp account, each with its own data folder and
+# password, behind Caddy (HTTPS). To add a user, copy a wa-* block, add a
+# password to .env and a site to Caddyfile. See DEPLOY.md.
+
+x-wa: &wa
+  build: ..
+  image: wa-bot
+  restart: unless-stopped
+  init: true            # so `docker compose stop` actually stops node
+  mem_limit: 1g          # ~500 MB idle at the QR screen; more once chats sync
+  environment: &wa-env
+    TZ: Asia/Jerusalem
+
+services:
+  wa-itai:
+    <<: *wa
+    hostname: wa-itai
+    environment:
+      <<: *wa-env
+      APP_PASSWORD: ${APP_PASSWORD_ITAI:?set APP_PASSWORD_ITAI in deploy/.env}
+    volumes:
+      - ./data/itai:/data
+
+  wa-friend:
+    <<: *wa
+    hostname: wa-friend
+    environment:
+      <<: *wa-env
+      APP_PASSWORD: ${APP_PASSWORD_FRIEND:?set APP_PASSWORD_FRIEND in deploy/.env}
+    volumes:
+      - ./data/friend:/data
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SERVER_HOST: ${SERVER_HOST:?set SERVER_HOST in deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
