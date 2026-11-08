@@ -19,9 +19,11 @@ without you buying a domain.
 
 ## 1. Create the server
 
-Any small Ubuntu 24.04 VPS with 4 GB RAM works for two or three users, for example
-Hetzner's smallest shared-vCPU plan (CX22 / CX23). Each WhatsApp user needs about
-up to 1 GB. In the provider's firewall, allow inbound TCP 22, 80 and 443.
+Any small **x86** Ubuntu 24.04 VPS with 4 GB RAM works for two or three users, for
+example Hetzner's CX23 (2 vCPU, 4 GB, about €6/month in late 2026). Each WhatsApp
+user needs up to 1 GB. Don't pick an ARM plan (Hetzner CAX, Oracle Ampere): the
+image uses Puppeteer's Chrome, which has no Linux ARM build. In the provider's
+firewall, allow inbound TCP 22, 80 and 443.
 
 Note the server's public IP, for example `203.0.113.7`. Your `SERVER_HOST` is then
 `203-0-113-7.sslip.io`.
@@ -111,7 +113,7 @@ WhatsApp client if *ready* hasn't arrived 3 minutes after *authenticated*. Check
 
 ## בעברית בקצרה
 
-1. שוכרים שרת קטן (Ubuntu, ‏4GB RAM, למשל Hetzner), ופותחים בחומת האש את הפורטים 22, 80, 443.
+1. שוכרים שרת קטן (Ubuntu, ‏4GB RAM, מעבד x86 ולא ARM, למשל Hetzner CX23), ופותחים בחומת האש את הפורטים 22, 80, 443.
 2. מתחברים ב-SSH ומריצים את הפקודות בשלב 2 למעלה. ב-`deploy/.env` ממלאים את כתובת השרת (ה-IP עם מקפים במקום נקודות, ואחריו `.sslip.io`) וסיסמה לכל משתמש.
 3. מריצים `docker compose up -d --build`.
 4. פותחים במחשב את `https://<שם>.<כתובת>.sslip.io`, מקלידים את הסיסמה (שם משתמש לא משנה), וסורקים את קוד ה-QR מהטלפון: WhatsApp ← הגדרות ← מכשירים מקושרים ← קישור מכשיר.
