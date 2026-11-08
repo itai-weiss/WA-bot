@@ -34,7 +34,7 @@ Main entry points:
 - WhatsApp authentication is stored by `whatsapp-web.js` under `.wwebjs_auth/`.
 - WhatsApp cache is stored under `.wwebjs_cache/`.
 - The only user-facing send workflow is creating and canceling future timings.
-- Metagroups are only a selection shortcut for the timing form.
+- Metagroups are the only way to choose timing recipients. The server resolves `metagroupIds` to group IDs when the timing is saved, so deleting a metagroup does not change saved timings.
 - Attachments are allowed only as part of a saved timing; there is no immediate-send UI.
 
 ## Safety Rules

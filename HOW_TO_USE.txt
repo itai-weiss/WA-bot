@@ -25,9 +25,10 @@ First WhatsApp connection
 
 Creating a scheduled message
 ----------------------------
-1. Choose one or more WhatsApp groups.
-2. Optional: save the selected groups as a meta-group.
-   Next time, choose that meta-group to select many groups in one click.
+1. Recipients are always meta-groups (a saved list of groups).
+   Click "Create meta-group", give it a name and tick its groups.
+   A meta-group can contain just one group.
+2. Click one or more meta-groups to send to them.
 3. Write a message and/or attach files.
    Click "Add message" to send several messages in a row.
 4. Choose a future date and time.

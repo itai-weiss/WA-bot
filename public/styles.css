@@ -283,6 +283,9 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
   font-weight: 600;
 }
 .mg-apply:hover { background: var(--blue-soft); }
+.mg-apply[aria-pressed="true"] { background: var(--blue); color: var(--surface); }
+.mg-apply[aria-pressed="true"] .mg-count { background: var(--surface); color: var(--blue); }
+.mg:has([aria-pressed="true"]) .mg-delete { border-inline-start-color: var(--blue); }
 
 .mg-count {
   min-width: 22px;
@@ -304,6 +307,54 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
   font-size: 18px;
 }
 .mg-delete:hover { color: var(--red); background: var(--red-soft); }
+
+.mg-empty {
+  margin: 0 0 12px;
+  padding: 14px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.new-mg { color: var(--blue); border-color: var(--blue); }
+.new-mg::before { content: "+ "; }
+.new-mg:hover { background: var(--blue-soft); border-color: var(--blue); }
+
+/* New metagroup dialog */
+
+.mg-dialog {
+  width: min(520px, calc(100vw - 32px));
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: var(--stripe);
+  color: var(--ink);
+}
+.mg-dialog::backdrop { background: rgba(24, 33, 58, 0.45); }
+
+.mg-form {
+  margin: 7px;
+  padding: 24px;
+  display: grid;
+  gap: 12px;
+  background: var(--surface);
+  border-radius: 9px;
+}
+
+.mg-dialog-title {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+}
+
+.mg-dialog-row { display: flex; align-items: center; gap: 12px; }
+.mg-dialog-row .step-aux { flex: none; }
+.mg-form .group-pick { max-height: min(340px, 45vh); }
+.mg-form .form-error { margin: 0; }
+.mg-dialog-actions { display: flex; gap: 8px; }
+.mg-dialog-actions .submit { flex: 1; font-size: 16px; padding: 12px; }
 
 /* Group picker */
 
@@ -336,12 +387,6 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
   color: var(--muted);
   font-size: 15px;
   text-align: center;
-}
-
-.mg-save {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
 }
 
 /* Messages: the airmail envelope is the page's one loud element. */
@@ -588,7 +633,6 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
   .compose-title { font-size: 30px; }
   .hint { padding-inline-start: 0; }
   .when { grid-template-columns: minmax(0, 1fr); padding-inline-start: 0; gap: 12px; }
-  .mg-save { flex-direction: column; }
   .startup { padding: 24px; }
 }
 

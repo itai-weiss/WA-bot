@@ -16,8 +16,14 @@ const groupPick = $('#group-pick');
 const groupSearch = $('#group-search');
 const groupCountEl = $('#group-count');
 const metagroupName = $('#metagroup-name');
-const saveMetagroupBtn = $('#save-metagroup');
 const metagroupList = $('#metagroup-list');
+const mgEmpty = $('#mg-empty');
+const newMgBtn = $('#new-metagroup');
+const mgDialog = $('#mg-dialog');
+const mgForm = $('#mg-form');
+const mgCancel = $('#mg-cancel');
+const mgError = $('#mg-error');
+const draftCount = $('#draft-count');
 const messageStack = $('#message-stack');
 const messageTemplate = $('#message-template');
 const messageCountEl = $('#message-count');
@@ -35,7 +41,8 @@ const doneList = $('#done-list');
 
 let lastReady = false;
 let allGroups = [];
-let selectedIds = new Set();
+let selectedMg = new Set();
+let draftIds = new Set();
 let metagroups = [];
 let messages = [];
 const MAX_FILES_PER_MESSAGE = 10;
@@ -193,7 +200,7 @@ async function poll() {
   }
 }
 
-/* ── Groups ── */
+/* ── Groups (only inside the "new metagroup" dialog) ── */
 
 function emptyLine(text) {
   const p = document.createElement('p');
@@ -223,6 +230,7 @@ async function loadGroups() {
 }
 
 function renderGroupPick() {
+  if (!allGroups.length) return;
   const q = groupSearch.value.trim().toLowerCase();
   const visible = q ? allGroups.filter((group) => group.name.toLowerCase().includes(q)) : allGroups;
 
@@ -231,20 +239,18 @@ function renderGroupPick() {
     return;
   }
 
-  // Selected groups first so the current choice is always visible.
-  const sorted = [...visible].sort((a, b) => selectedIds.has(b.id) - selectedIds.has(a.id));
   const frag = document.createDocumentFragment();
-  for (const group of sorted) {
+  for (const group of visible) {
     const label = document.createElement('label');
     label.className = 'group';
     const cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.value = group.id;
-    cb.checked = selectedIds.has(group.id);
+    cb.checked = draftIds.has(group.id);
     cb.addEventListener('change', () => {
-      if (cb.checked) selectedIds.add(group.id);
-      else selectedIds.delete(group.id);
-      updateGroupCount();
+      if (cb.checked) draftIds.add(group.id);
+      else draftIds.delete(group.id);
+      updateDraftCount();
     });
     const name = document.createElement('span');
     name.textContent = group.name;
@@ -252,15 +258,13 @@ function renderGroupPick() {
     frag.appendChild(label);
   }
   groupPick.replaceChildren(frag);
-  updateGroupCount();
 }
 
-function updateGroupCount() {
-  groupCountEl.textContent = `${selectedIds.size} נבחרו`;
-  groupCountEl.classList.toggle('on', selectedIds.size > 0);
+function updateDraftCount() {
+  draftCount.textContent = `${draftIds.size} נבחרו`;
 }
 
-/* ── Metagroups ── */
+/* ── Metagroups: the only way to pick recipients ── */
 
 async function loadMetagroups() {
   try {
@@ -276,23 +280,46 @@ function groupName(id) {
   return (allGroups.find((group) => group.id === id) || {}).name || id;
 }
 
+function targetGroupIds() {
+  const ids = new Set();
+  for (const metagroup of metagroups) {
+    if (selectedMg.has(metagroup.id)) metagroup.groupIds.forEach((id) => ids.add(id));
+  }
+  return ids;
+}
+
+function updateTargetCount() {
+  const groups = targetGroupIds().size;
+  const groupsText = groups === 1 ? 'קבוצה אחת' : `${groups} קבוצות`;
+  const mgText = selectedMg.size === 1 ? 'מטא-קבוצה אחת' : `${selectedMg.size} מטא-קבוצות`;
+  groupCountEl.textContent = selectedMg.size ? `${mgText} (${groupsText})` : 'לא נבחרה מטא-קבוצה';
+  groupCountEl.classList.toggle('on', selectedMg.size > 0);
+}
+
 function renderMetagroups() {
+  // Drop selections whose metagroup was deleted.
+  selectedMg = new Set([...selectedMg].filter((id) => metagroups.some((m) => m.id === id)));
   metagroupList.replaceChildren();
-  metagroupList.hidden = !metagroups.length;
+  mgEmpty.hidden = metagroups.length > 0;
 
   for (const metagroup of metagroups) {
     const li = document.createElement('li');
     li.className = 'mg';
-    const apply = document.createElement('button');
-    apply.type = 'button';
-    apply.className = 'mg-apply';
-    apply.title = metagroup.groupIds.map(groupName).join(', ');
-    apply.textContent = metagroup.name;
+    const pick = document.createElement('button');
+    pick.type = 'button';
+    pick.className = 'mg-apply';
+    pick.setAttribute('aria-pressed', String(selectedMg.has(metagroup.id)));
+    pick.title = metagroup.groupIds.map(groupName).join(', ');
+    pick.textContent = metagroup.name;
     const count = document.createElement('span');
     count.className = 'mg-count';
     count.textContent = metagroup.groupIds.length;
-    apply.appendChild(count);
-    apply.addEventListener('click', () => applyMetagroup(metagroup.id));
+    pick.appendChild(count);
+    pick.addEventListener('click', () => {
+      if (selectedMg.has(metagroup.id)) selectedMg.delete(metagroup.id);
+      else selectedMg.add(metagroup.id);
+      renderMetagroups();
+    });
 
     const del = document.createElement('button');
     del.type = 'button';
@@ -301,22 +328,15 @@ function renderMetagroups() {
     del.textContent = '×';
     del.addEventListener('click', () => deleteMetagroup(metagroup.id));
 
-    li.append(apply, del);
+    li.append(pick, del);
     metagroupList.appendChild(li);
   }
-}
-
-function applyMetagroup(id) {
-  const metagroup = metagroups.find((item) => item.id === id);
-  if (!metagroup) return;
-  selectedIds = new Set(metagroup.groupIds);
-  groupSearch.value = '';
-  renderGroupPick();
+  updateTargetCount();
 }
 
 async function deleteMetagroup(id) {
   const metagroup = metagroups.find((item) => item.id === id);
-  if (metagroup && !confirm(`למחוק את המטא-קבוצה "${metagroup.name}"? הקבוצות עצמן לא יימחקו.`)) return;
+  if (metagroup && !confirm(`למחוק את המטא-קבוצה "${metagroup.name}"? הקבוצות עצמן לא יימחקו, ותזמונים שכבר נשמרו יישלחו כרגיל.`)) return;
   try {
     await fetch(`/api/metagroups/${id}`, { method: 'DELETE' });
     metagroups = metagroups.filter((item) => item.id !== id);
@@ -324,25 +344,42 @@ async function deleteMetagroup(id) {
   } catch (_) {}
 }
 
-async function saveMetagroup() {
+function openMetagroupDialog() {
+  draftIds = new Set();
+  metagroupName.value = '';
+  groupSearch.value = '';
+  showMgError('');
+  updateDraftCount();
+  renderGroupPick();
+  mgDialog.showModal();
+  metagroupName.focus();
+}
+
+function showMgError(message) {
+  mgError.textContent = message;
+  mgError.hidden = !message;
+}
+
+async function saveMetagroup(ev) {
+  ev.preventDefault();
   const name = metagroupName.value.trim();
-  if (!name) return showError('כתוב שם למטא-קבוצה.');
-  if (!selectedIds.size) return showError('בחר לפחות קבוצה אחת לפני שמירה.');
+  if (!name) return showMgError('כתוב שם למטא-קבוצה.');
+  if (!draftIds.size) return showMgError('בחר לפחות קבוצה אחת לפני שמירה.');
 
   try {
     const res = await fetch('/api/metagroups', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, groupIds: [...selectedIds] }),
+      body: JSON.stringify({ name, groupIds: [...draftIds] }),
     });
     const payload = await res.json();
     if (!res.ok) throw new Error(payload.error || res.statusText);
     metagroups.push(payload);
-    metagroupName.value = '';
-    showError('');
+    selectedMg.add(payload.id);
     renderMetagroups();
+    mgDialog.close();
   } catch (err) {
-    showError(err.message);
+    showMgError(err.message);
   }
 }
 
@@ -472,7 +509,7 @@ function timingItem(timing, kind) {
 
   const groups = document.createElement('p');
   groups.className = 'timing-groups';
-  groups.textContent = (timing.groupNames || timing.groupIds).join(', ');
+  groups.textContent = (timing.metagroupNames?.length ? timing.metagroupNames : timing.groupNames || timing.groupIds).join(', ');
 
   const { preview, meta } = messageSummary(timing);
   const text = document.createElement('p');
@@ -520,11 +557,11 @@ form.addEventListener('submit', async (ev) => {
   ev.preventDefault();
   showError('');
 
-  const groupIds = [...selectedIds];
+  const metagroupIds = [...selectedMg];
   const scheduledAt = scheduledAtEl.value ? new Date(scheduledAtEl.value).toISOString() : '';
   const emptyIndex = messages.findIndex((m) => !m.text.trim() && !m.files.length);
 
-  if (!groupIds.length) return showError('בחר לפחות קבוצה אחת.');
+  if (!metagroupIds.length) return showError('בחר לפחות מטא-קבוצה אחת.');
   if (emptyIndex !== -1) return showError(`${TEXT.messageNo(emptyIndex + 1)} ריקה. כתוב הודעה או צרף לפחות קובץ אחד.`);
   if (!scheduledAt || Number.isNaN(new Date(scheduledAt).getTime())) return showError('בחר מועד שליחה תקין.');
   if (new Date(scheduledAt).getTime() <= Date.now()) return showError('מועד השליחה חייב להיות בעתיד.');
@@ -534,7 +571,7 @@ form.addEventListener('submit', async (ev) => {
 
   try {
     const fd = new FormData();
-    for (const id of groupIds) fd.append('groupIds', id);
+    for (const id of metagroupIds) fd.append('metagroupIds', id);
     fd.append('scheduledAt', scheduledAt);
     fd.append('messages', JSON.stringify(messages.map((m) => ({ text: m.text.trim() }))));
     messages.forEach((m, i) => m.files.forEach((file) => fd.append(`files_${i}`, file)));
@@ -557,7 +594,9 @@ form.addEventListener('submit', async (ev) => {
 });
 
 groupSearch.addEventListener('input', renderGroupPick);
-saveMetagroupBtn.addEventListener('click', saveMetagroup);
+newMgBtn.addEventListener('click', openMetagroupDialog);
+mgForm.addEventListener('submit', saveMetagroup);
+mgCancel.addEventListener('click', () => mgDialog.close());
 addMessageBtn.addEventListener('click', () => addMessage(true));
 scheduledAtEl.addEventListener('input', renderWhen);
 

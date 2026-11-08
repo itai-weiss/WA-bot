@@ -26,8 +26,8 @@ Open **http://127.0.0.1:3000**. On first run, scan the QR from WhatsApp on your 
 
 Once connected, the UI only supports timings:
 
-- pick one or more groups
-- save a reusable meta-group and apply it later with one click
+- create meta-groups (a saved list of one or more groups) with the "create meta-group" button
+- pick one or more meta-groups as the recipients of a timing (meta-groups are the only way to choose recipients)
 - write one or more messages (sent in order), each with optional attachments
 - choose a future send time
 - save or cancel upcoming timings

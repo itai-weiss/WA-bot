@@ -258,6 +258,7 @@ function create(input, filesByMessage = []) {
     id: timingId,
     name: input.name?.trim() || `Timing ${when.toISOString()}`,
     groupIds: input.groupIds.map(String),
+    metagroupNames: Array.isArray(input.metagroupNames) ? input.metagroupNames.map(String) : [],
     messages: input.messages.map((message, i) => ({
       text: (message.text || '').trim(),
       attachments: saveAttachments(timingId, i, filesByMessage[i] || []),

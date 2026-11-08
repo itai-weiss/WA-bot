@@ -125,12 +125,20 @@ app.delete('/api/metagroups/:id', (req, res) => {
   }
 });
 
-// Body: groupIds[], scheduledAt, messages (JSON [{text}]); files for message i in field files_<i>.
+// Body: metagroupIds[], scheduledAt, messages (JSON [{text}]); files for message i in field files_<i>.
+// Recipients are resolved from metagroups now, so deleting a metagroup later
+// does not change timings that were already saved.
 app.post('/api/timings', upload.any(), (req, res) => {
   if (!state.ready) return res.status(503).json({ error: getClientUnavailableMessage() });
 
   try {
-    const groupIds = [].concat(req.body.groupIds || []).filter(Boolean);
+    const metagroupIds = [].concat(req.body.metagroupIds || []).filter(Boolean);
+    const chosen = metagroups.list().filter((m) => metagroupIds.includes(m.id));
+    if (!chosen.length || chosen.length !== new Set(metagroupIds).size) {
+      return res.status(400).json({ error: 'select at least one existing metagroup' });
+    }
+    const groupIds = [...new Set(chosen.flatMap((m) => m.groupIds))];
+    const metagroupNames = chosen.map((m) => m.name);
     let messages;
     try {
       messages = JSON.parse(req.body.messages || '[]');
@@ -143,7 +151,7 @@ app.post('/api/timings', upload.any(), (req, res) => {
       if (!match) continue;
       (filesByMessage[Number(match[1])] ||= []).push(file);
     }
-    const timing = timings.create({ ...req.body, groupIds, messages }, filesByMessage);
+    const timing = timings.create({ ...req.body, groupIds, metagroupNames, messages }, filesByMessage);
     res.status(201).json(timing);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });

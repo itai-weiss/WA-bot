@@ -52,21 +52,11 @@
               <h2 id="step-groups" class="step-title">למי לשלוח</h2>
               <span id="group-count" class="step-aux">0 נבחרו</span>
             </div>
-            <p class="hint">סמנו קבוצות מהרשימה, או בחרו מטא-קבוצה שמורה כדי לסמן כמה קבוצות בבת אחת.</p>
+            <p class="hint">בחרו מטא-קבוצה אחת או יותר. מטא-קבוצה היא רשימת קבוצות שמורה, ואפשר ליצור אחת גם עם קבוצה בודדת.</p>
 
-            <ul id="metagroup-list" class="mg-list" aria-label="מטא-קבוצות שמורות"></ul>
-
-            <div class="search">
-              <input type="search" id="group-search" placeholder="חפש קבוצה…" aria-label="חפש קבוצה" />
-            </div>
-            <div id="group-pick" class="group-pick" role="group" aria-label="קבוצות">
-              <p class="empty">טוען קבוצות…</p>
-            </div>
-
-            <div class="mg-save">
-              <input type="text" id="metagroup-name" placeholder="שם למטא-קבוצה מהבחירה הנוכחית…" aria-label="שם למטא-קבוצה" />
-              <button type="button" id="save-metagroup" class="btn-quiet">שמור כמטא-קבוצה</button>
-            </div>
+            <ul id="metagroup-list" class="mg-list" aria-label="מטא-קבוצות"></ul>
+            <p id="mg-empty" class="mg-empty">עדיין אין מטא-קבוצות. צרו אחת כדי לבחור למי לשלוח.</p>
+            <button type="button" id="new-metagroup" class="btn-quiet new-mg">צור מטא-קבוצה</button>
           </section>
 
           <section class="step" aria-labelledby="step-messages">
@@ -116,6 +106,25 @@
         </aside>
       </div>
     </main>
+
+    <dialog id="mg-dialog" class="mg-dialog" aria-labelledby="mg-dialog-title">
+      <form id="mg-form" class="mg-form" autocomplete="off" novalidate>
+        <h2 id="mg-dialog-title" class="mg-dialog-title">מטא-קבוצה חדשה</h2>
+        <input type="text" id="metagroup-name" placeholder="שם, למשל: ועד הבית" aria-label="שם המטא-קבוצה" />
+        <div class="mg-dialog-row">
+          <input type="search" id="group-search" placeholder="חפש קבוצה…" aria-label="חפש קבוצה" />
+          <span id="draft-count" class="step-aux">0 נבחרו</span>
+        </div>
+        <div id="group-pick" class="group-pick" role="group" aria-label="קבוצות">
+          <p class="empty">טוען קבוצות…</p>
+        </div>
+        <p id="mg-error" class="form-error" role="alert" hidden></p>
+        <div class="mg-dialog-actions">
+          <button type="submit" class="submit">שמור מטא-קבוצה</button>
+          <button type="button" id="mg-cancel" class="btn-quiet">ביטול</button>
+        </div>
+      </form>
+    </dialog>
 
     <template id="message-template">
       <li class="message">
