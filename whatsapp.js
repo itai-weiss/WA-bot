@@ -81,6 +81,8 @@ function createClient() {
     puppeteer: {
       headless: true,
       executablePath,
+      // getChats() on large accounts during first sync can exceed the 180s default.
+      protocolTimeout: 600000,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     },
   });
