@@ -1,0 +1,57 @@
+WA-bot: simple setup and use
+============================
+
+Before starting
+---------------
+1. Install Google Chrome.
+2. Install Node.js 20 LTS from:
+   https://nodejs.org/
+
+First-time setup
+----------------
+1. Double-click install.bat.
+2. Wait until it says Done.
+3. Double-click start.bat.
+4. A browser should open at:
+   http://127.0.0.1:3000
+
+First WhatsApp connection
+-------------------------
+1. The page may show a QR code.
+2. Open WhatsApp on your phone.
+3. Go to Settings -> Linked devices -> Link a device.
+4. Scan the QR code.
+5. After it connects, the timing page appears.
+
+Creating a scheduled message
+----------------------------
+1. Choose one or more WhatsApp groups.
+2. Optional: save the selected groups as a meta-group.
+   Next time, choose that meta-group to select many groups in one click.
+3. Write a message and/or attach files.
+4. Choose a future date and time.
+5. Click "Save timing".
+
+Important
+---------
+- Keep the start.bat window open while messages need to be sent.
+- Keep the phone with WhatsApp online.
+- This uses your personal WhatsApp Web session.
+- Do not use it for spam or commercial bulk sending.
+- The app only runs on this computer at 127.0.0.1.
+
+Stopping
+--------
+Close the start.bat window, or press Ctrl+C in that window.
+
+Local data
+----------
+These are created automatically on this computer:
+- .env
+- .wwebjs_auth/
+- .wwebjs_cache/
+- timings.json
+- metagroups.json
+- timing-attachments/
+
+Do not share those files after logging in, because they may contain local session or message data.
