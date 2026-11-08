@@ -61,6 +61,9 @@ if (client) {
     }
   });
 
+  // Scheduling from the user's own "Message yourself" chat (see chatCommands.js).
+  require('./chatCommands').attach(client);
+
   client.initialize().catch((err) => {
     console.error('WhatsApp initialize failed:', err.message);
     setInitializeError(err);

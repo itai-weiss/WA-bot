@@ -12,7 +12,8 @@ Main entry points:
 - `whatsapp.js` - WhatsApp Web client creation, QR/status lifecycle, browser discovery.
 - `timings.js` - one-shot scheduled sends (one or more messages each) persisted in `timings.json`; a 15s due-check sends them, including late ones up to 6h.
 - `keepAwake.js` - keeps Windows from idle-sleeping while timings are pending.
-- `test-timings.js` - self-check for `timings.js` (`npm test`), uses a fake client and a temp dir.
+- `chatCommands.js` - scheduling from the user's own "Message yourself" WhatsApp chat (`תזמון` header, 1-10 messages, `תזמון: סוף`; plus `רשימה`, `בטל <code>`, `עזרה`). Replies start with `🤖 ` and are never read back.
+- `test-timings.js`, `test-chat.js` - self-checks (`npm test`), fake client and temp dir.
 - `metagroups.js` - saved group bundles persisted in `metagroups.json`.
 - `eventLog.js` - in-memory recent send log.
 - `dataDir.js` - resolves `DATA_DIR` (default: the app folder), where timings, metagroups, attachments and the WhatsApp session/cache live.
@@ -28,7 +29,7 @@ Main entry points:
 - List WhatsApp groups: `npm run groups`
 - Basic JS syntax check for changed files: `node --check <file>`
 
-`npm test` runs `test-timings.js`; it never sends messages or touches real data.
+`npm test` runs `test-timings.js` and `test-chat.js`; they never send messages or touch real data.
 
 ## Runtime Behavior
 
@@ -38,7 +39,7 @@ Main entry points:
 - If `APP_PASSWORD` is set, every route needs HTTP Basic auth (any username). The server exits at startup if `HOST` is not loopback and `APP_PASSWORD` is empty.
 - If `ready` hasn't fired 3 min after `authenticated` (upstream session-restore hang), `server.js` destroys and re-initializes the client.
 - Browser lookup: `CHROME_PATH`, then Windows Chrome/Edge and Linux Chrome/Chromium paths, then Puppeteer's bundled Chrome (used in Docker).
-- The only user-facing send workflow is creating and canceling future timings.
+- The only user-facing send workflow is creating and canceling future timings, from the web UI or from the self-chat (`chatCommands.js`). The self-chat handler must never react in any other chat.
 - Metagroups are the only way to choose timing recipients. The server resolves `metagroupIds` to group IDs when the timing is saved, so deleting a metagroup does not change saved timings.
 - Attachments are allowed only as part of a saved timing; there is no immediate-send UI.
 
@@ -68,6 +69,7 @@ For small JS-only edits, at minimum run:
 ```powershell
 node --check server.js
 node --check dataDir.js
+node --check chatCommands.js
 node --check whatsapp.js
 node --check timings.js
 node --check metagroups.js

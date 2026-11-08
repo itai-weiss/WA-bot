@@ -37,6 +37,25 @@ Creating a scheduled message
 4. Choose a future date and time.
 5. Click "Save timing".
 
+Scheduling from WhatsApp
+------------------------
+You can also schedule without the web page, in WhatsApp's
+"Message yourself" chat (the chat with your own number):
+1. Send one message with 3 lines:
+     תזמון
+     מחר 18:00
+     קבוצות: name, name
+   The second line is the time (18:00, היום 18:00, מחר 18:00,
+   מחרתיים 9:30, 25/11 18:00 or 25/11/2027 18:00). The third lists
+   meta-group names, separated by commas.
+2. Send 1-10 messages (text, photo or file), in the order they should go out.
+3. Send: תזמון: סוף
+   The reply confirms the timing and gives it a code.
+Other commands: "תזמון: ביטול" cancels a draft, "רשימה" lists meta-groups
+and pending timings, "בטל <code>" cancels a saved timing, "עזרה" shows help.
+The app's replies start with 🤖. Other messages in that chat are left alone,
+and no other chat is read. Timings made this way also show in the web page.
+
 Important
 ---------
 - Keep the start.bat window open while messages need to be sent.

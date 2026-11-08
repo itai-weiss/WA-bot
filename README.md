@@ -34,6 +34,8 @@ Once connected, the UI only supports timings:
 
 A Hebrew guide opens from the "מדריך" button and the `?` next to each step. `HOW_TO_USE.txt` (English) and `HOW_TO_USE_HE.txt` (Hebrew) are the end-user setup guides shipped with the friend zip.
 
+Timings can also be created from WhatsApp, in your own "Message yourself" chat: a `תזמון` / time / `קבוצות: …` message, then 1-10 messages, then `תזמון: סוף`. `רשימה`, `בטל <code>` and `עזרה` work there too. See `chatCommands.js` for the format. No other chat is read.
+
 There is no immediate-send workflow. Attachments are only sent as part of a saved timing.
 
 Timings are stored locally in `timings.json`.

@@ -166,7 +166,7 @@ button { cursor: pointer; }
 .help-body section { padding-top: 18px; scroll-margin-top: 72px; }
 .help-body h3 { margin: 0 0 6px; font-size: 18px; font-weight: 700; color: var(--blue); }
 .help-body p, .help-body li { margin: 0 0 8px; max-width: 64ch; line-height: 1.65; }
-.help-body ul { margin: 0; padding-inline-start: 20px; }
+.help-body ul, .help-body ol { margin: 0; padding-inline-start: 20px; }
 .help-body em { font-style: normal; font-weight: 600; }
 
 /* ── Layout ── */
