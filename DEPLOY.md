@@ -30,9 +30,11 @@ Note the server's public IP, for example `203.0.113.7`. Your `SERVER_HOST` is th
 
 ## 2. Install Docker and the app
 
-SSH into the server (`ssh root@203.0.113.7`), then:
+SSH into the server (`ssh root@203.0.113.7`; on OVHcloud the user is `ubuntu`,
+so `ssh ubuntu@203.0.113.7`), then:
 
 ```bash
+sudo -i
 curl -fsSL https://get.docker.com | sh
 git clone -b whatsapp-web-app https://github.com/itai-weiss/WA-bot.git
 cd WA-bot/deploy
