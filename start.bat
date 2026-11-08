@@ -19,7 +19,8 @@ if not exist ".env" (
   copy ".env.example" ".env" >nul
 )
 
-start "" "http://127.0.0.1:3000"
+rem Open the browser a few seconds later, once the server is listening.
+start "" /b powershell -NoProfile -WindowStyle Hidden -Command "Start-Sleep 5; Start-Process http://127.0.0.1:3000"
 echo.
 echo Starting WA-bot...
 echo Keep this window open while scheduled messages need to be sent.
